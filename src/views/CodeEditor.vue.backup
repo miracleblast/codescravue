@@ -147,30 +147,21 @@
             </div>
           </div>
 
-          <textarea
-            ref="editorTextarea"
-            v-model="editorContent"
-            @input="handleContentChange"
-            @keydown="handleKeydown"
-            @scroll="handleScroll"
-            @click="updateCursorPosition"
-            @keyup="updateCursorPosition"
-            class="code-editor"
-            :style="{
-              fontSize: fontSize + 'px',
-              fontFamily: 'Monaco, Menlo, \"Ubuntu Mono\", monospace',
-              lineHeight: lineHeight + 'px'
-            }"
-            spellcheck="false"
-          ></textarea>
-
+<textarea
+  ref="editorTextarea"
+  v-model="editorContent"
+  @input="handleContentChange"
+  @keydown="handleKeydown"
+  @scroll="handleScroll"
+  @click="updateCursorPosition"
+  @keyup="updateCursorPosition"
+  class="code-editor"
+  :style="editorStyles"
+  spellcheck="false"
+></textarea>
           <!-- Syntax Highlighting Overlay -->
           <div class="syntax-highlighting" ref="highlightOverlay"
-               :style="{
-                 fontSize: fontSize + 'px',
-                 fontFamily: 'Monaco, Menlo, \"Ubuntu Mono\", monospace',
-                 lineHeight: lineHeight + 'px'
-               }">
+               :style="editorStyles">
             <div v-for="(line, index) in highlightedLines" :key="index" 
                  class="highlight-line" v-html="line"></div>
           </div>
@@ -414,6 +405,7 @@ const FileTreeNode = {
     isSelected() {
       return this.selectedFile?.path === this.node.path
     },
+    
     isFile() {
       return this.node.type === 'file'
     },
@@ -616,6 +608,13 @@ export default {
   },
 
   computed: {
+    editorStyles() {
+    return {
+      fontSize: this.fontSize + 'px',
+      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+      lineHeight: this.lineHeight + 'px'
+    }
+  },
     filteredFileTree() {
       if (!this.fileSearch) return this.fileTree
       
@@ -2187,5 +2186,110 @@ export default {
   .editor-info {
     display: none;
   }
+}
+/* Enhanced editor layout */
+.editor-container {
+  position: relative;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Enhanced syntax highlighting */
+.code-line {
+  display: flex;
+  min-height: 1.5em;
+}
+
+.line-number {
+  min-width: 3rem;
+  padding: 0 0.5rem;
+  text-align: right;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  user-select: none;
+}
+
+.line-content {
+  flex: 1;
+  padding: 0 0.5rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: pre;
+}
+
+/* Enhanced file tree */
+.file-tree {
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.tree-node {
+  margin-bottom: 0.25rem;
+}
+
+.node-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.node-content:hover {
+  background: var(--bg-secondary);
+}
+
+.node-content.selected {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Enhanced outline panel */
+.outline-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.outline-item:hover {
+  background: var(--bg-secondary);
+}
+
+.outline-item.function {
+  color: var(--success-color);
+}
+
+.outline-item.class {
+  color: var(--primary-color);
+}
+
+.outline-item.method {
+  color: var(--accent-color);
+}
+
+.outline-item.variable {
+  color: var(--warning-color);
 }
 </style>

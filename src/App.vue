@@ -97,10 +97,12 @@ import HelpModal from './components/HelpModal.vue'
 
 export default {
   name: 'App',
-  components: { HelpModal },
+  components: { 
+    HelpModal 
+  },
   data() {
     return {
-      isDarkTheme: true, // Default to dark theme
+      isDarkTheme: true,
       showHelp: false
     }
   },
@@ -111,22 +113,13 @@ export default {
       localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light')
     },
     toggleLanguage() {
-      // Your language toggle logic
       alert('Language toggle - feature coming soon!')
-    },
-    checkElectronAPI() {
-      if (!window.electronAPI) {
-        console.warn('Electron API not available - running in browser mode')
-      }
     }
   },
   mounted() {
-    // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark'
     this.isDarkTheme = savedTheme === 'dark'
     document.documentElement.setAttribute('data-theme', savedTheme)
-    
-    this.checkElectronAPI()
   }
 }
 </script>

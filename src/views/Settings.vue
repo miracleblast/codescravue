@@ -2696,4 +2696,18 @@ export default {
   font-size: 0.875rem;
   opacity: 0.9;
 }
+/* In Settings.vue scoped styles */
+.about-section {
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.about-section p,
+.about-section li {
+  color: var(--text-primary) !important;
+}
+
+.about-section h3 {
+  color: var(--text-primary) !important;
+}
 </style>

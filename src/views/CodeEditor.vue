@@ -2,8 +2,8 @@
   <div class="code-editor-tab">
     <!-- Header Section -->
     <div class="tab-header">
-      <h1>Code Editor</h1>
-      <p>Edit and manage your scraped code with syntax highlighting and advanced features</p>
+      <h1>Code Editor & Runner</h1>
+      <p>Edit and manage your scraped code with syntax highlighting, advanced file editing with built-in code preview and execution</p>
     </div>
 
     <!-- Editor Statistics -->
@@ -193,7 +193,91 @@
           </div>
         </div>
       </div>
-
+          <!-- Live Preview Section -->
+          <div v-if="showPreview" class="preview-section">
+            <div class="preview-header">
+              <h4>Live Preview</h4>
+              <div class="preview-actions">
+                <button class="btn-icon" @click="refreshPreview" title="Refresh Preview">
+                  <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="openInNewWindow" title="Open in New Window">
+                  <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="togglePreview" title="Close Preview">
+                  <iconify-icon icon="material-symbols:close"></iconify-icon>
+                </button>
+              </div>
+            </div>
+            
+            <div class="preview-content">
+              <!-- HTML Preview -->
+              <iframe 
+                v-if="isHtmlFile && showPreview"
+                ref="previewFrame"
+                class="preview-frame"
+                sandbox="allow-scripts allow-same-origin"
+                :srcdoc="generatePreviewHtml()"
+              ></iframe>
+              
+              <!-- CSS Preview -->
+              <div v-else-if="isCssFile" class="css-preview">
+                <div class="css-preview-container" :style="cssPreviewStyle">
+                  <div class="css-preview-content">
+                    <h3>CSS Preview</h3>
+                    <p>This is a preview of your CSS styles</p>
+                    <button class="btn btn-primary">Styled Button</button>
+                    <div class="preview-card">
+                      <h4>Card Title</h4>
+                      <p>This card demonstrates your CSS styles</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- JavaScript Console -->
+              <div v-else-if="isJsFile" class="js-preview">
+                <div class="console-output" ref="consoleOutput">
+                  <div class="console-header">
+                    <h4>JavaScript Console</h4>
+                    <button class="btn-icon" @click="clearConsole" title="Clear Console">
+                      <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
+                    </button>
+                  </div>
+                  <div class="console-messages">
+                    <div v-for="(message, index) in consoleMessages" :key="index" 
+                         class="console-message" :class="message.type">
+                      <span class="message-time">{{ message.time }}</span>
+                      <span class="message-content">{{ message.content }}</span>
+                    </div>
+                  </div>
+                  <div class="console-input">
+                    <input 
+                      type="text" 
+                      v-model="consoleInput" 
+                      @keyup.enter="executeConsoleInput"
+                      placeholder="Enter JavaScript code..."
+                      class="console-input-field"
+                    >
+                    <button class="btn-icon" @click="executeConsoleInput" title="Execute">
+                      <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Default Preview for other file types -->
+              <div v-else class="default-preview">
+                <div class="preview-placeholder">
+                  <iconify-icon icon="material-symbols:code" class="preview-icon"></iconify-icon>
+                  <h3>Live Preview</h3>
+                  <p>Preview is available for HTML, CSS, and JavaScript files</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- Right Panel - File Info & Tools -->
       <div class="editor-right-panel" v-if="showRightPanel">
         <div class="panel-tabs">
@@ -531,12 +615,18 @@ export default {
   },
   data() {
     return {
-      // Editor statistics
+      // Preview features
+      showPreview: false,
+      consoleMessages: [],
+      consoleInput: '',
+      previewKey: 0, // Force iframe reload
+      
+      // Enhanced editor stats
       editorStats: [
         { id: 1, label: 'Open Files', value: '0', icon: 'material-symbols:file-open', class: 'stat-primary' },
         { id: 2, label: 'Total Files', value: '0', icon: 'material-symbols:folder', class: 'stat-secondary' },
         { id: 3, label: 'Lines of Code', value: '0', icon: 'material-symbols:code', class: 'stat-success' },
-        { id: 4, label: 'Last Saved', value: 'Just now', icon: 'material-symbols:schedule', class: 'stat-warning' }
+        { id: 4, label: 'Preview', value: 'Ready', icon: 'material-symbols:visibility', class: 'stat-warning' }
       ],
 
       // File system
@@ -641,6 +731,41 @@ export default {
       return this.editorContent.length
     }
   },
+   // Preview-related computed properties
+    isHtmlFile() {
+      return this.currentFile && (this.currentFile.name.endsWith('.html') || this.currentLanguage === 'html')
+    },
+    
+    isCssFile() {
+      return this.currentFile && (this.currentFile.name.endsWith('.css') || this.currentLanguage === 'css')
+    },
+    
+    isJsFile() {
+      return this.currentFile && (this.currentFile.name.endsWith('.js') || this.currentFile.name.endsWith('.ts') || this.currentLanguage === 'javascript' || this.currentLanguage === 'typescript')
+    },
+    
+    cssPreviewStyle() {
+      if (!this.isCssFile) return {}
+      
+      // Create a style element to apply the CSS
+      const style = document.createElement('style')
+      style.textContent = this.editorContent
+      
+      // For demo purposes, we'll just return some basic styles
+      // In a real implementation, you'd properly parse and apply the CSS
+      return {
+        fontFamily: 'Arial, sans-serif',
+        padding: '20px'
+      }
+    },
+    
+    editorStyles() {
+      return {
+        fontSize: this.fontSize + 'px',
+        fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+        lineHeight: this.lineHeight + 'px'
+      }
+    },
 
   watch: {
     currentFile(newFile) {
@@ -674,7 +799,23 @@ export default {
     this.setupKeyboardShortcuts()
     this.updateVisibleLines()
     this.updateStats()
+    this.setupConsoleInterception()
   },
+
+  },
+   editorContent() {
+      // Auto-refresh preview when content changes
+      if (this.showPreview && this.isHtmlFile) {
+        this.debouncedRefreshPreview()
+      }
+    },
+    
+    currentFile() {
+      // Auto-show preview for HTML files
+      if (this.currentFile && this.isHtmlFile) {
+        this.showPreview = true
+      }
+    },
 
   methods: {
     // File operations
@@ -735,7 +876,140 @@ export default {
         { name: 'README.md', path: '/projects/README.md', type: 'file', size: 2048, modified: new Date() }
       ]
     },
-
+  // Preview methods
+    togglePreview() {
+      this.showPreview = !this.showPreview
+      this.updateStats()
+    },
+    
+    handleLanguageChange() {
+      // Auto-show preview for supported file types
+      if (this.isHtmlFile || this.isCssFile) {
+        this.showPreview = true
+      }
+    },
+    
+    generatePreviewHtml() {
+      if (!this.isHtmlFile) return ''
+      
+      let htmlContent = this.editorContent
+      
+      // Ensure basic HTML structure if missing
+      if (!htmlContent.includes('<html')) {
+        htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: white; 
+            color: black;
+        }
+        .preview-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-warning">
+        Live Preview - Content from Code Editor
+    </div>
+    ${htmlContent}
+</body>
+</html>`
+      }
+      
+      return htmlContent
+    },
+    
+    refreshPreview() {
+      this.previewKey++
+      this.addConsoleMessage('info', 'Preview refreshed')
+    },
+    
+    openInNewWindow() {
+      if (this.isHtmlFile) {
+        const newWindow = window.open('', '_blank')
+        newWindow.document.write(this.generatePreviewHtml())
+        newWindow.document.close()
+      }
+    },
+    
+    // Console methods
+    addConsoleMessage(type, content) {
+      this.consoleMessages.push({
+        type,
+        content,
+        time: new Date().toLocaleTimeString()
+      })
+      
+      // Keep only last 100 messages
+      if (this.consoleMessages.length > 100) {
+        this.consoleMessages = this.consoleMessages.slice(-100)
+      }
+      
+      // Auto-scroll to bottom
+      this.$nextTick(() => {
+        const container = this.$refs.consoleOutput
+        if (container) {
+          container.scrollTop = container.scrollHeight
+        }
+      })
+    },
+    
+    clearConsole() {
+      this.consoleMessages = []
+    },
+    
+    executeConsoleInput() {
+      if (!this.consoleInput.trim()) return
+      
+      try {
+        // Add input to console
+        this.addConsoleMessage('input', `> ${this.consoleInput}`)
+        
+        // Execute the code
+        const result = eval(this.consoleInput)
+        
+        // Add result to console
+        this.addConsoleMessage('output', String(result))
+        
+      } catch (error) {
+        this.addConsoleMessage('error', error.message)
+      }
+      
+      this.consoleInput = ''
+    },
+    
+    // Enhanced stats update
+    updateStats() {
+      this.editorStats = [
+        { id: 1, label: 'Open Files', value: this.openTabs.length.toString(), icon: 'material-symbols:file-open', class: 'stat-primary' },
+        { id: 2, label: 'Total Files', value: this.countTotalFiles().toString(), icon: 'material-symbols:folder', class: 'stat-secondary' },
+        { id: 3, label: 'Lines of Code', value: this.lineCount.toString(), icon: 'material-symbols:code', class: 'stat-success' },
+        { id: 4, label: 'Preview', value: this.showPreview ? 'Active' : 'Ready', icon: 'material-symbols:visibility', class: 'stat-warning' }
+      ]
+    },
+    
+    // Debounced preview refresh
+    debouncedRefreshPreview: null
+  },
+  
+  created() {
+    // Setup debounced preview refresh
+    this.debouncedRefreshPreview = this.debounce(() => {
+      this.refreshPreview()
+    }, 500)
+  },
     async loadStorageLocations() {
       try {
         if (window.electronAPI && window.electronAPI.getStorageLocations) {
@@ -1261,9 +1535,42 @@ export default {
     closeNewFileModal() {
       this.showNewFileModal = false
       this.newFileName = ''
+    },
+        // Utility method for debouncing
+    debounce(func, wait) {
+      let timeout
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout)
+          func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
+      }
+    },
+    
+    setupConsoleInterception() {
+      // Intercept console.log and friends to show in our console
+      const originalLog = console.log
+      const originalError = console.error
+      const originalWarn = console.warn
+      
+      console.log = (...args) => {
+        this.addConsoleMessage('output', args.join(' '))
+        originalLog.apply(console, args)
+      }
+      
+      console.error = (...args) => {
+        this.addConsoleMessage('error', args.join(' '))
+        originalError.apply(console, args)
+      }
+      
+      console.warn = (...args) => {
+        this.addConsoleMessage('warning', args.join(' '))
+        originalWarn.apply(console, args)
+      }
     }
-  }
-}
+  
 </script>
 
 <style scoped>
@@ -2291,5 +2598,218 @@ export default {
 
 .outline-item.variable {
   color: var(--warning-color);
+}
+/* Editor Preview Layout */
+.editor-preview-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-preview-container.preview-active {
+  flex-direction: row;
+}
+
+.code-editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor-preview-container.preview-active .code-editor-section {
+  flex: 1;
+  border-right: 1px solid var(--border-color);
+}
+
+.preview-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-primary);
+}
+
+/* Preview Header */
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.preview-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.preview-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Preview Content */
+.preview-content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+/* CSS Preview */
+.css-preview {
+  padding: 20px;
+  height: 100%;
+  overflow: auto;
+}
+
+.css-preview-container {
+  min-height: 100%;
+}
+
+.css-preview-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.preview-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+}
+
+/* JavaScript Console */
+.js-preview {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-output {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+}
+
+.console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.console-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.console-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.console-message {
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.console-message.input {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.console-message.output {
+  color: var(--text-primary);
+}
+
+.console-message.error {
+  color: var(--error);
+}
+
+.console-message.warning {
+  color: var(--warning);
+}
+
+.message-time {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-right: 1rem;
+}
+
+.console-input {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.console-input-field {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.console-input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Default Preview */
+.default-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+}
+
+.preview-placeholder {
+  text-align: center;
+}
+
+.preview-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .editor-preview-container.preview-active {
+    flex-direction: column;
+  }
+  
+  .editor-preview-container.preview-active .code-editor-section {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    flex: 1;
+  }
+  
+  .preview-section {
+    flex: 1;
+  }
 }
 </style>
