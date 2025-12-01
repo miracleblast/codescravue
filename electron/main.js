@@ -678,50 +678,1033 @@ ipcMain.handle('cancel-scraping', async (event, scraperId) => {
   }
 });
 
-// 💾 STORAGE HANDLERS
-ipcMain.handle('get-storage-info', async () => {
+
+
+// 💾 REAL STORAGE DETECTION & MANAGEMENT
+ipcMain.handle('get-storage-locations', async () => {
   try {
-    const userDataPath = app.getPath('userData');
-    const stats = await fs.stat(userDataPath);
+    console.log('🔍 Getting REAL storage locations...');
+    
+    const drives = await detectStorageDevices();
+    const defaultLocations = await getDefaultStorageLocations();
+    const cloudMounts = await detectCloudMounts();
+    
+    const allLocations = [
+      ...defaultLocations,
+      ...drives,
+      ...cloudMounts
+    ];
+    
+    // Calculate stats for each location
+    for (const location of allLocations) {
+      await calculateLocationStats(location);
+    }
     
     return {
       success: true,
-      storage: {
-        path: userDataPath,
-        size: stats.size,
-        freeSpace: await getFreeDiskSpace(userDataPath)
+      locations: allLocations,
+      total: allLocations.length,
+      timestamp: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    console.error('Storage detection error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('add-storage-location', async (event, locationData) => {
+  try {
+    console.log('➕ Adding storage location:', locationData.path);
+    
+    // Validate path exists
+    await fs.access(locationData.path);
+    
+    // Calculate stats
+    const location = {
+      ...locationData,
+      custom: true,
+      type: 'directory',
+      detected: false,
+      timestamp: Date.now()
+    };
+    
+    await calculateLocationStats(location);
+    
+    return { success: true, location };
+    
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('remove-storage-location', async (event, path) => {
+  try {
+    // Just remove from our tracking - doesn't delete actual data
+    console.log('🗑️ Removing storage location:', path);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('scan-storage-location', async (event, path) => {
+  try {
+    console.log('🔍 Scanning storage location:', path);
+    
+    const stats = await fs.stat(path);
+    const fileCount = await countFilesInDirectory(path);
+    const size = await getDirectorySize(path);
+    
+    return {
+      success: true,
+      stats: {
+        path,
+        size,
+        fileCount,
+        lastScanned: new Date().toISOString(),
+        scannedFiles: fileCount,
+        scanProgress: 100
       }
     };
+    
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle('get-recent-results', async () => {
+ipcMain.handle('get-storage-usage', async () => {
   try {
-    const results = await loadRecentResults();
-    return { success: true, results };
+    const userDataPath = app.getPath('userData');
+    const stats = await fs.stat(userDataPath);
+    const freeSpace = await getFreeDiskSpace(userDataPath);
+    
+    return {
+      success: true,
+      usage: {
+        total: stats.size,
+        used: stats.size,
+        free: freeSpace,
+        percentage: Math.round((stats.size / (stats.size + freeSpace)) * 100)
+      }
+    };
+    
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-async function getFreeDiskSpace(path) {
+// 🎯 STORAGE DETECTION HELPER FUNCTIONS
+
+async function detectStorageDevices() {
+  const drives = [];
+  
   try {
     if (process.platform === 'win32') {
-      const { execSync } = await import('child_process');
-      const result = execSync(`wmic logicaldisk where "DeviceID='${path.substring(0, 2)}'" get FreeSpace /value`).toString();
-      const freeSpace = parseInt(result.match(/FreeSpace=(\d+)/)[1]);
-      return freeSpace;
-    } else {
-      const { execSync } = await import('child_process');
-      const result = execSync(`df -k "${path}" | tail -1`).toString();
-      const parts = result.trim().split(/\s+/);
-      return parseInt(parts[3]) * 1024;
+      // Windows - detect drives
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execPromise = util.promisify(exec);
+      
+      try {
+        const { stdout } = await execPromise('wmic logicaldisk get deviceid, volumename, size, freespace, drivetype');
+        const lines = stdout.trim().split('\n').slice(1);
+        
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length >= 3) {
+            const driveLetter = parts[0];
+            const driveType = parseInt(parts[parts.length - 1]);
+            const size = parseInt(parts[parts.length - 2]) || 0;
+            const free = parseInt(parts[parts.length - 3]) || 0;
+            const name = parts.slice(1, -3).join(' ') || 'Local Disk';
+            
+            if (driveType === 2 || driveType === 3) { // Removable or Fixed
+              drives.push({
+                path: driveLetter + '\\',
+                name: name,
+                type: driveType === 2 ? 'removable' : 'fixed',
+                size: size,
+                free: free,
+                used: size - free,
+                driveType: getDriveTypeString(driveType),
+                default: driveLetter === 'C:',
+                detected: true
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.log('WMIC failed, trying PowerShell...');
+        try {
+          const { stdout } = await execPromise('powershell "Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, VolumeName, Size, FreeSpace, DriveType | ConvertTo-Json"');
+          const winDrives = JSON.parse(stdout);
+          
+          for (const drive of Array.isArray(winDrives) ? winDrives : [winDrives]) {
+            if (drive.DriveType === 2 || drive.DriveType === 3) {
+              drives.push({
+                path: drive.DeviceID + '\\',
+                name: drive.VolumeName || 'Local Disk',
+                type: drive.DriveType === 2 ? 'removable' : 'fixed',
+                size: parseInt(drive.Size) || 0,
+                free: parseInt(drive.FreeSpace) || 0,
+                used: parseInt(drive.Size) - parseInt(drive.FreeSpace),
+                driveType: getDriveTypeString(drive.DriveType),
+                default: drive.DeviceID === 'C:',
+                detected: true
+              });
+            }
+          }
+        } catch (psError) {
+          console.log('PowerShell detection failed:', psError);
+        }
+      }
+      
+    } else if (process.platform === 'darwin') {
+      // macOS - detect volumes
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execPromise = util.promisify(exec);
+      
+      try {
+        const { stdout } = await execPromise('df -k | grep -E "^/dev/"');
+        const lines = stdout.trim().split('\n');
+        
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length >= 6) {
+            const mountPoint = parts[parts.length - 1];
+            const size = parseInt(parts[1]) * 1024;
+            const used = parseInt(parts[2]) * 1024;
+            const free = parseInt(parts[3]) * 1024;
+            
+            // Skip system volumes
+            if (mountPoint === '/' || mountPoint.startsWith('/System') || 
+                mountPoint.startsWith('/private')) {
+              continue;
+            }
+            
+            drives.push({
+              path: mountPoint,
+              name: getVolumeName(mountPoint),
+              type: mountPoint.includes('Volumes') ? 'removable' : 'fixed',
+              size: size,
+              free: free,
+              used: used,
+              driveType: 'unix',
+              default: mountPoint === '/',
+              detected: true
+            });
+          }
+        }
+      } catch (e) {
+        console.log('macOS detection failed:', e);
+      }
+      
+    } else if (process.platform === 'linux') {
+      // 💽 ROBUST LINUX STORAGE DETECTION - MULTI-METHOD
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execPromise = util.promisify(exec);
+      
+      console.log('🐧 Starting Linux storage detection...');
+      
+      // METHOD 1: Use lsblk (most reliable for block devices)
+      try {
+        console.log('🔍 METHOD 1: Using lsblk...');
+        const { stdout: lsblkOutput } = await execPromise(
+          'lsblk -o NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,LABEL,MODEL -J 2>/dev/null || lsblk -o NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,LABEL,MODEL -b -n 2>/dev/null'
+        );
+        
+        let blockDevices;
+        try {
+          blockDevices = JSON.parse(lsblkOutput);
+        } catch {
+          // Parse non-JSON output
+          const lines = lsblkOutput.trim().split('\n').slice(1);
+          blockDevices = { blockdevices: [] };
+          let currentDevice = null;
+          
+          for (const line of lines) {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 4) {
+              const device = {
+                name: parts[0],
+                type: parts[1],
+                size: parts[2],
+                mountpoint: parts[3] || null,
+                fstype: parts[4] || 'unknown',
+                label: parts[5] || '',
+                model: parts.slice(6).join(' ') || ''
+              };
+              blockDevices.blockdevices.push(device);
+            }
+          }
+        }
+        
+        for (const device of blockDevices.blockdevices || []) {
+          // Only process mounted filesystems
+          if (device.mountpoint && device.mountpoint !== '[SWAP]' && device.type === 'disk') {
+            try {
+              // Get children partitions
+              const children = device.children || [];
+              for (const child of children) {
+                if (child.mountpoint && child.mountpoint !== '[SWAP]') {
+                  await processLinuxMount(child.mountpoint, child.label || device.model || 'Linux Volume', drives);
+                }
+              }
+            } catch (e) {
+              // Try the device itself
+              await processLinuxMount(device.mountpoint, device.label || device.model || 'Linux Volume', drives);
+            }
+          }
+        }
+      } catch (lsblkError) {
+        console.log('lsblk failed:', lsblkError.message);
+      }
+      
+      // METHOD 2: Use df (for mounted filesystems)
+      try {
+        console.log('🔍 METHOD 2: Using df...');
+        const { stdout: dfOutput } = await execPromise(
+          'df -k -T 2>/dev/null | grep -E "^(/dev/|//)" | grep -v "tmpfs\\|udev\\|devtmpfs\\|overlay\\|squashfs"'
+        );
+        
+        const lines = dfOutput.trim().split('\n');
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length >= 7) {
+            const mountPoint = parts[6];
+            const fsType = parts[1];
+            const size = parseInt(parts[2]) * 1024;
+            const used = parseInt(parts[3]) * 1024;
+            const free = parseInt(parts[4]) * 1024;
+            
+            // Skip system mounts
+            if (isSystemMount(mountPoint, fsType)) continue;
+            
+            // Check if already processed
+            if (!drives.some(d => d.path === mountPoint)) {
+              const name = await getLinuxVolumeName(mountPoint);
+              const accessible = await checkAccessible(mountPoint);
+              drives.push({
+                path: mountPoint,
+                name: name,
+                type: getLinuxDriveType(mountPoint),
+                size: size,
+                free: free,
+                used: used,
+                total: size,
+                filesystem: fsType,
+                default: mountPoint === '/',
+                detected: true,
+                accessible: accessible
+              });
+            }
+          }
+        }
+      } catch (dfError) {
+        console.log('df failed:', dfError.message);
+      }
+      
+      // METHOD 3: Check common mount directories
+      console.log('🔍 METHOD 3: Checking common mount directories...');
+      const commonMountDirs = [
+        '/mnt',
+        '/media',
+        `/media/${process.env.USER || process.env.LOGNAME || 'user'}`,
+        `/run/media/${process.env.USER || process.env.LOGNAME || 'user'}`,
+        '/media/usb',
+        '/media/cdrom',
+        '/media/dvd',
+        '/media/floppy'
+      ];
+      
+      for (const mountDir of commonMountDirs) {
+        try {
+          await fs.access(mountDir);
+          const stats = await fs.stat(mountDir);
+          if (stats.isDirectory()) {
+            const subdirs = await fs.readdir(mountDir, { withFileTypes: true });
+            for (const subdir of subdirs) {
+              if (subdir.isDirectory()) {
+                const fullPath = path.join(mountDir, subdir.name);
+                if (!drives.some(d => d.path === fullPath)) {
+                  await processPotentialMount(fullPath, drives);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          // Directory doesn't exist or inaccessible
+          continue;
+        }
+      }
+      
+      // METHOD 4: Check /etc/fstab for configured mounts
+      try {
+        console.log('🔍 METHOD 4: Checking /etc/fstab...');
+        const fstabContent = await fs.readFile('/etc/fstab', 'utf8');
+        const lines = fstabContent.split('\n');
+        
+        for (const line of lines) {
+          if (line.trim() && !line.startsWith('#')) {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 2) {
+              const mountPoint = parts[1];
+              // Skip system mounts
+              if (!isSystemMount(mountPoint) && 
+                  !drives.some(d => d.path === mountPoint)) {
+                try {
+                  await fs.access(mountPoint);
+                  await processPotentialMount(mountPoint, drives);
+                } catch (error) {
+                  // Mount point doesn't exist or inaccessible
+                }
+              }
+            }
+          }
+        }
+      } catch (fstabError) {
+        console.log('fstab check failed:', fstabError.message);
+      }
+      
+      // METHOD 5: Check /proc/mounts directly
+      try {
+        console.log('🔍 METHOD 5: Checking /proc/mounts...');
+        const mountsContent = await fs.readFile('/proc/mounts', 'utf8');
+        const lines = mountsContent.split('\n');
+        
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length >= 3 && parts[0].startsWith('/dev/')) {
+            const mountPoint = parts[1];
+            const fsType = parts[2];
+            
+            if (!isSystemMount(mountPoint, fsType) && 
+                !drives.some(d => d.path === mountPoint)) {
+              try {
+                await processPotentialMount(mountPoint, drives);
+              } catch (error) {
+                continue;
+              }
+            }
+          }
+        }
+      } catch (mountsError) {
+        console.log('/proc/mounts check failed:', mountsError.message);
+      }
+      
+      // Add user directories
+      const userDirs = await getLinuxUserDirectories();
+      drives.push(...userDirs);
+      
+      // Remove duplicates
+      const uniqueDrives = [];
+      const seenPaths = new Set();
+      
+      for (const drive of drives) {
+        if (!seenPaths.has(drive.path)) {
+          seenPaths.add(drive.path);
+          uniqueDrives.push(drive);
+        }
+      }
+      
+      console.log(`✅ Linux detection complete: ${uniqueDrives.length} locations found`);
+      drives.length = 0;
+      drives.push(...uniqueDrives);
     }
   } catch (error) {
-    return 0;
+    console.error('Storage detection error:', error);
   }
+  
+  return drives;
+}
+
+// Helper function to process a Linux mount
+async function processLinuxMount(mountPoint, name, drives) {
+  try {
+    await fs.access(mountPoint);
+    const stats = await fs.stat(mountPoint);
+    
+    if (stats.isDirectory()) {
+      const { exec } = await import('child_process');
+      const util = await import('util');
+      const execPromise = util.promisify(exec);
+      
+      // Get disk usage
+      let size = 0, free = 0, used = 0;
+      try {
+        const { stdout: dfOutput } = await execPromise(`df -k "${mountPoint}" 2>/dev/null | tail -1`);
+        const parts = dfOutput.trim().split(/\s+/);
+        if (parts.length >= 6) {
+          size = parseInt(parts[1]) * 1024;
+          used = parseInt(parts[2]) * 1024;
+          free = parseInt(parts[3]) * 1024;
+        }
+      } catch (dfError) {
+        // Use fallback calculation
+        size = await getDirectorySize(mountPoint);
+      }
+      
+      // Determine if it's accessible
+      let accessible = true;
+      try {
+        await fs.readdir(mountPoint);
+      } catch (error) {
+        accessible = false;
+      }
+      
+      // Clean up the name
+      const cleanName = name
+        .replace(/^\//, '')
+        .replace(/[^a-zA-Z0-9\s\-_]/g, ' ')
+        .trim() || path.basename(mountPoint) || 'Linux Volume';
+      
+      drives.push({
+        path: mountPoint,
+        name: cleanName,
+        type: getLinuxDriveType(mountPoint),
+        size: size,
+        free: free,
+        used: used,
+        total: size + free,
+        default: mountPoint === '/',
+        detected: true,
+        accessible: accessible,
+        filesystem: await getLinuxFilesystem(mountPoint)
+      });
+    }
+  } catch (error) {
+    // Skip inaccessible mounts
+  }
+}
+
+// Helper function to check if a mount is a system mount
+function isSystemMount(mountPoint, fsType) {
+  const systemMounts = [
+    '/',
+    '/boot',
+    '/boot/efi',
+    '/efi',
+    '/sys',
+    '/proc',
+    '/dev',
+    '/dev/pts',
+    '/dev/shm',
+    '/run',
+    '/run/lock',
+    '/run/user',
+    '/var',
+    '/var/log',
+    '/var/tmp',
+    '/tmp',
+    '/snap',
+    '/sysroot',
+  ];
+  
+  const systemFsTypes = [
+    'tmpfs',
+    'devtmpfs',
+    'proc',
+    'sysfs',
+    'cgroup',
+    'cgroup2',
+    'securityfs',
+    'pstore',
+    'efivarfs',
+    'mqueue',
+    'hugetlbfs',
+    'overlay',
+    'squashfs',
+    'fuse.portal',
+    'fusectl',
+    'tracefs',
+    'debugfs',
+    'configfs',
+    'ramfs',
+    'autofs',
+    'rpc_pipefs',
+    'nfsd',
+    'binfmt_misc'
+  ];
+  
+  // Check if it's a system mount point
+  if (systemMounts.some(sm => mountPoint === sm || mountPoint.startsWith(sm + '/'))) {
+    return true;
+  }
+  
+  // Check if it's a system filesystem type
+  if (fsType && systemFsTypes.includes(fsType)) {
+    return true;
+  }
+  
+  // Check for special system patterns
+  if (mountPoint.match(/^\/snap\/|^\/var\/snap\/|^\/run\/snap/)) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Get Linux drive type based on mount point
+function getLinuxDriveType(mountPoint) {
+  if (mountPoint.includes('/media/') || mountPoint.includes('/mnt/')) {
+    return 'removable';
+  }
+  if (mountPoint === '/') {
+    return 'system';
+  }
+  if (mountPoint.includes('/home/')) {
+    return 'home';
+  }
+  return 'fixed';
+}
+
+// Get Linux volume name
+async function getLinuxVolumeName(mountPoint) {
+  try {
+    const { exec } = await import('child_process');
+    const util = await import('util');
+    const execPromise = util.promisify(exec);
+    
+    // Try to get label via blkid
+    try {
+      const { stdout } = await execPromise(
+        `sudo blkid 2>/dev/null | grep $(df "${mountPoint}" 2>/dev/null | tail -1 | cut -d' ' -f1) 2>/dev/null || true`
+      );
+      if (stdout.includes('LABEL="')) {
+        const match = stdout.match(/LABEL="([^"]+)"/);
+        if (match) return match[1];
+      }
+    } catch (e) {
+      // Try without sudo
+      try {
+        const { stdout } = await execPromise(
+          `blkid 2>/dev/null | grep $(df "${mountPoint}" 2>/dev/null | tail -1 | cut -d' ' -f1) 2>/dev/null || true`
+        );
+        if (stdout.includes('LABEL="')) {
+          const match = stdout.match(/LABEL="([^"]+)"/);
+          if (match) return match[1];
+        }
+      } catch (e2) {
+        // Fall through
+      }
+    }
+    
+    // Try to get via lsblk
+    try {
+      const { stdout } = await execPromise(
+        `lsblk -no LABEL $(df "${mountPoint}" 2>/dev/null | tail -1 | cut -d' ' -f1) 2>/dev/null`
+      );
+      const label = stdout.trim();
+      if (label) return label;
+    } catch (e) {
+      // Fall through
+    }
+    
+    // Use directory name
+    const dirName = path.basename(mountPoint);
+    if (dirName && dirName !== '') {
+      return dirName.charAt(0).toUpperCase() + dirName.slice(1);
+    }
+    
+    // Default names based on path
+    if (mountPoint === '/') return 'Root Filesystem';
+    if (mountPoint.includes('/home/')) return 'Home Directory';
+    if (mountPoint.includes('/media/')) return 'USB Drive';
+    if (mountPoint.includes('/mnt/')) return 'Mounted Drive';
+    
+    return 'Linux Volume';
+  } catch (error) {
+    return path.basename(mountPoint) || 'Linux Volume';
+  }
+}
+
+// Get filesystem type
+async function getLinuxFilesystem(mountPoint) {
+  try {
+    const { exec } = await import('child_process');
+    const util = await import('util');
+    const execPromise = util.promisify(exec);
+    
+    const { stdout } = await execPromise(
+      `df -T "${mountPoint}" 2>/dev/null | tail -1 | awk '{print $2}'`
+    );
+    return stdout.trim() || 'unknown';
+  } catch (error) {
+    return 'unknown';
+  }
+}
+
+// Check if path is accessible
+async function checkAccessible(path) {
+  try {
+    await fs.access(path);
+    // Try to read directory to ensure we have read permissions
+    await fs.readdir(path, { withFileTypes: true });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Process a potential mount point
+async function processPotentialMount(mountPoint, drives) {
+  try {
+    await fs.access(mountPoint);
+    const stats = await fs.stat(mountPoint);
+    
+    if (stats.isDirectory()) {
+      // Get disk usage
+      const size = await getDirectorySize(mountPoint);
+      const accessible = await checkAccessible(mountPoint);
+      
+      // Skip if already in list
+      if (drives.some(d => d.path === mountPoint)) return;
+      
+      const name = await getLinuxVolumeName(mountPoint);
+      const type = getLinuxDriveType(mountPoint);
+      
+      drives.push({
+        path: mountPoint,
+        name: name,
+        type: type,
+        size: size,
+        free: 0, // Will be calculated later
+        used: size,
+        default: mountPoint === '/',
+        detected: true,
+        accessible: accessible
+      });
+    }
+  } catch (error) {
+    // Skip inaccessible mounts
+  }
+}
+
+// Get Linux user directories
+async function getLinuxUserDirectories() {
+  const userDirs = [];
+  const userHome = os.homedir();
+  
+  const userDirectories = [
+    { path: userHome, name: 'Home Directory' },
+    { path: path.join(userHome, 'Desktop'), name: 'Desktop' },
+    { path: path.join(userHome, 'Documents'), name: 'Documents' },
+    { path: path.join(userHome, 'Downloads'), name: 'Downloads' },
+    { path: path.join(userHome, 'Pictures'), name: 'Pictures' },
+    { path: path.join(userHome, 'Music'), name: 'Music' },
+    { path: path.join(userHome, 'Videos'), name: 'Videos' },
+    { path: path.join(userHome, 'Public'), name: 'Public' },
+    { path: path.join(userHome, 'Templates'), name: 'Templates' }
+  ];
+  
+  for (const dir of userDirectories) {
+    try {
+      await fs.access(dir.path);
+      const stats = await fs.stat(dir.path);
+      if (stats.isDirectory()) {
+        const size = await getDirectorySize(dir.path);
+        userDirs.push({
+          path: dir.path,
+          name: dir.name,
+          type: 'home',
+          size: size,
+          default: dir.path === userHome,
+          detected: true,
+          accessible: true
+        });
+      }
+    } catch (error) {
+      // Directory doesn't exist
+    }
+  }
+  
+  return userDirs;
+}
+
+async function getDefaultStorageLocations() {
+  const defaults = [];
+  
+  try {
+    // User's home directory
+    const homeDir = os.homedir();
+    defaults.push({
+      path: homeDir,
+      name: 'Home Directory',
+      type: 'directory',
+      default: true,
+      detected: true
+    });
+    
+    // App's user data directory
+    const userDataDir = app.getPath('userData');
+    if (userDataDir !== homeDir) {
+      defaults.push({
+        path: userDataDir,
+        name: 'App Data',
+        type: 'directory',
+        default: true,
+        detected: true
+      });
+    }
+    
+    // Desktop (if exists)
+    const desktopDir = app.getPath('desktop');
+    if (desktopDir && desktopDir !== homeDir) {
+      defaults.push({
+        path: desktopDir,
+        name: 'Desktop',
+        type: 'directory',
+        default: true,
+        detected: true
+      });
+    }
+    
+    // Documents (if exists)
+    const docsDir = app.getPath('documents');
+    if (docsDir && docsDir !== homeDir) {
+      defaults.push({
+        path: docsDir,
+        name: 'Documents',
+        type: 'directory',
+        default: true,
+        detected: true
+      });
+    }
+    
+    // Downloads (if exists)
+    const downloadsDir = app.getPath('downloads');
+    if (downloadsDir && downloadsDir !== homeDir) {
+      defaults.push({
+        path: downloadsDir,
+        name: 'Downloads',
+        type: 'directory',
+        default: true,
+        detected: true
+      });
+    }
+    
+  } catch (error) {
+    console.error('Default locations error:', error);
+  }
+  
+  return defaults;
+}
+
+async function detectCloudMounts() {
+  const cloudMounts = [];
+  
+  try {
+    const homeDir = os.homedir();
+    
+    // OneDrive detection
+    const oneDrivePaths = [
+      path.join(homeDir, 'OneDrive'),
+      path.join(homeDir, 'OneDrive - Personal'),
+      path.join(homeDir, 'OneDrive - Business')
+    ];
+    
+    for (const oneDrivePath of oneDrivePaths) {
+      try {
+        await fs.access(oneDrivePath);
+        const stats = await fs.stat(oneDrivePath);
+        if (stats.isDirectory()) {
+          cloudMounts.push({
+            path: oneDrivePath,
+            name: 'OneDrive',
+            type: 'cloud',
+            cloudProvider: 'onedrive',
+            default: false,
+            detected: true
+          });
+          break; // Use first found OneDrive
+        }
+      } catch { /* Continue */ }
+    }
+    
+    // Google Drive detection
+    const googleDrivePaths = [
+      path.join(homeDir, 'Google Drive'),
+      path.join(homeDir, 'GoogleDrive')
+    ];
+    
+    for (const googleDrivePath of googleDrivePaths) {
+      try {
+        await fs.access(googleDrivePath);
+        const stats = await fs.stat(googleDrivePath);
+        if (stats.isDirectory()) {
+          cloudMounts.push({
+            path: googleDrivePath,
+            name: 'Google Drive',
+            type: 'cloud',
+            cloudProvider: 'google-drive',
+            default: false,
+            detected: true
+          });
+          break; // Use first found Google Drive
+        }
+      } catch { /* Continue */ }
+    }
+    
+    // Dropbox detection
+    const dropboxPath = path.join(homeDir, 'Dropbox');
+    try {
+      await fs.access(dropboxPath);
+      const stats = await fs.stat(dropboxPath);
+      if (stats.isDirectory()) {
+        cloudMounts.push({
+          path: dropboxPath,
+          name: 'Dropbox',
+          type: 'cloud',
+          cloudProvider: 'dropbox',
+          default: false,
+          detected: true
+        });
+      }
+    } catch { /* Continue */ }
+    
+  } catch (error) {
+    console.error('Cloud mount detection error:', error);
+  }
+  
+  return cloudMounts;
+}
+
+async function calculateLocationStats(location) {
+  try {
+    const stats = await fs.stat(location.path);
+    
+    if (stats.isDirectory()) {
+      try {
+        location.size = await getDirectorySize(location.path);
+        location.fileCount = await countFilesInDirectory(location.path);
+        location.directoryCount = await countDirectoriesInDirectory(location.path);
+        
+        // Get free space for root of drive
+        if (location.path.match(/^[A-Z]:\\$/i) || location.path === '/') {
+          location.free = await getFreeDiskSpace(location.path);
+          location.used = location.size;
+          location.total = location.size + location.free;
+        }
+      } catch (error) {
+        console.log(`Could not calculate size for ${location.path}:`, error.message);
+        location.size = 0;
+        location.fileCount = 0;
+      }
+    } else {
+      location.size = stats.size;
+      location.fileCount = 1;
+    }
+    
+    location.lastModified = stats.mtime;
+    location.created = stats.birthtime || stats.ctime;
+    
+  } catch (error) {
+    console.error(`Stats calculation failed for ${location.path}:`, error);
+    location.size = 0;
+    location.fileCount = 0;
+  }
+  
+  return location;
+}
+
+async function getDirectorySize(dirPath) {
+  let totalSize = 0;
+  
+  try {
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item.name);
+      
+      try {
+        if (item.isDirectory()) {
+          totalSize += await getDirectorySize(itemPath);
+        } else if (item.isFile()) {
+          const stats = await fs.stat(itemPath);
+          totalSize += stats.size;
+        }
+      } catch (error) {
+        // Skip inaccessible files/directories
+        continue;
+      }
+    }
+  } catch (error) {
+    // Directory might be inaccessible
+  }
+  
+  return totalSize;
+}
+
+async function countFilesInDirectory(dirPath) {
+  let count = 0;
+  
+  try {
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const item of items) {
+      const itemPath = path.join(dirPath, item.name);
+      
+      try {
+        if (item.isDirectory()) {
+          count += await countFilesInDirectory(itemPath);
+        } else if (item.isFile()) {
+          count++;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  } catch (error) {
+    // Directory might be inaccessible
+  }
+  
+  return count;
+}
+
+async function countDirectoriesInDirectory(dirPath) {
+  let count = 0;
+  
+  try {
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const item of items) {
+      try {
+        if (item.isDirectory()) {
+          count++;
+          const itemPath = path.join(dirPath, item.name);
+          count += await countDirectoriesInDirectory(itemPath);
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  } catch (error) {
+    // Directory might be inaccessible
+  }
+  
+  return count;
+}
+
+function getDriveTypeString(driveType) {
+  switch (driveType) {
+    case 0: return 'Unknown';
+    case 1: return 'No Root Directory';
+    case 2: return 'Removable Disk';
+    case 3: return 'Local Disk';
+    case 4: return 'Network Drive';
+    case 5: return 'Compact Disc';
+    case 6: return 'RAM Disk';
+    default: return 'Unknown';
+  }
+}
+
+function getVolumeName(mountPoint) {
+  // Extract volume name from path
+  const parts = mountPoint.split(path.sep);
+  return parts[parts.length - 1] || mountPoint;
 }
 
 // 📁 FILE SYSTEM HANDLERS

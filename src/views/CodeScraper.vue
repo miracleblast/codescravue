@@ -1,10 +1,12 @@
 <template>
+  <div class="scraper">
+    <!-- Scraper Overview -->
   <div class="tab-content active" id="scraper">
     <div class="tab-header">
       <h2><iconify-icon icon="iconamoon:cloud-download-light"></iconify-icon> Advanced Code Scraper</h2>
       <p>Extract code from multiple platforms with intelligent filtering and real-time monitoring</p>
     </div>
-
+</div>
     <!-- Quick Actions -->
     <div class="quick-actions">
       <button class="btn btn-primary" @click="startQuickScraping">

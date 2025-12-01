@@ -1,53 +1,41 @@
-
-// electron/preload.js
+// preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
-// 🎯 PRODUCTION-READY ELECTRON API WITH REAL-TIME EVENTS
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 🔧 CONFIGURATION
+  // Storage management
+  getStorageLocations: () => ipcRenderer.invoke('get-storage-locations'),
+  addStorageLocation: (location) => ipcRenderer.invoke('add-storage-location', location),
+  removeStorageLocation: (path) => ipcRenderer.invoke('remove-storage-location', path),
+  scanStorageLocation: (path) => ipcRenderer.invoke('scan-storage-location', path),
+  getStorageUsage: () => ipcRenderer.invoke('get-storage-usage'),
+  
+  // File system
+  showItemInFolder: (path) => ipcRenderer.invoke('show-item-in-folder', path),
+  showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
+  showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
+  
+  // Existing APIs
   getConfig: () => ipcRenderer.invoke('get-config'),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
-  
-  // 👤 ACCOUNTS MANAGEMENT
   getAccounts: () => ipcRenderer.invoke('get-accounts'),
   saveAccounts: (accounts) => ipcRenderer.invoke('save-accounts', accounts),
   testAccount: (account) => ipcRenderer.invoke('test-account', account),
-  
-  // 🚀 REAL SCRAPING OPERATIONS
-  startScraping: (options) => ipcRenderer.invoke('start-scraping', options),
+  startScraping: (config) => ipcRenderer.invoke('start-scraping', config),
   cancelScraping: (scraperId) => ipcRenderer.invoke('cancel-scraping', scraperId),
-  
-  // 💾 STORAGE MANAGEMENT
-  getStorageInfo: () => ipcRenderer.invoke('get-storage-info'),
   getRecentResults: () => ipcRenderer.invoke('get-recent-results'),
   
-  // 📁 FILE SYSTEM
-  showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
-  showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
-  showItemInFolder: (path) => ipcRenderer.invoke('show-item-in-folder', path),
-  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  // Events
+  onScrapingProgress: (callback) => ipcRenderer.on('scraping-progress', callback),
+  onScrapingError: (callback) => ipcRenderer.on('scraping-error', callback),
   
-  // 🔐 LICENSE
-  validateLicense: (licenseKey) => ipcRenderer.invoke('validate-license', licenseKey),
-  
-  // 🔔 REAL-TIME EVENT LISTENERS FOR SCRAPING PROGRESS
-  onScrapingProgress: (callback) => {
-    ipcRenderer.on('scraping-progress', callback);
-    return () => ipcRenderer.removeListener('scraping-progress', callback);
-  },
-  
-  onScrapingError: (callback) => {
-    ipcRenderer.on('scraping-error', callback);
-    return () => ipcRenderer.removeListener('scraping-error', callback);
-  },
-  
-  onScrapingComplete: (callback) => {
-    ipcRenderer.on('scraping-complete', callback);
-    return () => ipcRenderer.removeListener('scraping-complete', callback);
-  },
-  
-  // 🧹 CLEANUP
-  removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+  // License
+  validateLicense: (key) => ipcRenderer.invoke('validate-license', key)
+});
+
+// Remove listeners to prevent memory leaks
+window.addEventListener('beforeunload', () => {
+  ipcRenderer.removeAllListeners('scraping-progress');
+  ipcRenderer.removeAllListeners('scraping-error');
 });
 
 console.log('✅ Production preload.js with real-time events loaded!');

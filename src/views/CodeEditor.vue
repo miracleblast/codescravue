@@ -2,7 +2,7 @@
   <div class="code-editor-tab">
     <!-- Header Section -->
     <div class="tab-header">
-      <h1>Code Editor & Runner</h1>
+      <h1><iconify-icon icon="ion:code-slash"></iconify-icon> Code Editor & Runner</h1>
       <p>Edit and manage your scraped code with syntax highlighting, advanced file editing with built-in code preview and execution</p>
     </div>
 

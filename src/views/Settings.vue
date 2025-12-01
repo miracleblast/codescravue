@@ -118,12 +118,20 @@
                   <label for="language">Language</label>
                   <select id="language" v-model="settings.general.language" class="form-select">
                     <option value="en">English</option>
-                    <option value="zw">Swahili</option>
-                    <option value="ar">arabic</option>
-                    <option value="ru">russian</option>
+                    <option value="zw">Kiswahili</option>
+                    <option value="zw">Igbo*</option>
+                    <option value="zw">Yoruba*</option>
+                    <option value="zw">Zulu*</option>
+                    <option value="zw">Xhosa*</option>
+                    <option value="zw">Hausa*</option>
+                    <option value="ar">العربية</option>
+                    <option value="ru">русский</option>
                     <option value="zh">中文</option>
-                    <option value="hd">hindi</option>
+                    <option value="zh">粵語</option>
+                    <option value="vt">Việt</option>
+                    <option value="hd">हिंदी</option>
                     <option value="es">Español</option>
+                    <option value="pt">Português</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -794,8 +802,8 @@
                     <li>✅ No data collection - we don't track anything</li>
                     <li>✅ No analytics - your usage is private</li>
                     <li>✅ No crash reporting - if it breaks, contact us directly</li>
-                    <li>✅ All scraping happens on YOUR computer</li>
-                    <li>✅ All data stays on YOUR machine</li>
+                    <li>ℹ️ All scraping happens on YOUR computer</li>
+                    <li>ℹ️ All data stays on YOUR machine</li>
                   </ul>
                 </div>
 
