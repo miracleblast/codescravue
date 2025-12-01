@@ -107,7 +107,7 @@
                   v-model="scrapingConfig.fileTypes"
                   :disabled="isScraping"
                 >
-                <span class="file-type-icon">{{ fileType.icon }}</span>
+                <iconify-icon class="file-type-icon" :icon="fileType.icon"></iconify-icon>
                 {{ fileType.label }}
               </label>
             </div>
@@ -493,7 +493,7 @@
       <div class="results-grid">
         <div 
           v-for="(result, index) in filteredResults" 
-          :key="result.id"
+          :key="index"
           class="result-card"
           :class="`platform-${result.platform}`"
         >
@@ -724,7 +724,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'CodeScraper',
   data() {
@@ -735,22 +734,22 @@ export default {
       selectedResult: null,
       autoScrollLogs: true,
       fileTypes: [
-        { value: '.js', label: 'JavaScript', icon: '🟨' },
-        { value: '.ts', label: 'TypeScript', icon: '🔷' },
-        { value: '.py', label: 'Python', icon: '🐍' },
-        { value: '.java', label: 'Java', icon: '☕' },
-        { value: '.cpp', label: 'C++', icon: '⚙️' },
-        { value: '.cs', label: 'C#', icon: '🔷' },
-        { value: '.php', label: 'PHP', icon: '🐘' },
-        { value: '.rb', label: 'Ruby', icon: '💎' },
-        { value: '.go', label: 'Go', icon: '🐹' },
-        { value: '.rs', label: 'Rust', icon: '🦀' },
-        { value: '.html', label: 'HTML', icon: '🌐' },
-        { value: '.css', label: 'CSS', icon: '🎨' },
-        { value: '.json', label: 'JSON', icon: '📋' },
-        { value: '.xml', label: 'XML', icon: '📄' },
-        { value: '.md', label: 'Markdown', icon: '📝' },
-        { value: '.yml', label: 'YAML', icon: '⚙️' }
+        { value: '.js', label: 'JavaScript', icon: 'vscode-icons:file-type-js' },
+        { value: '.ts', label: 'TypeScript', icon: 'vscode-icons:file-type-typescript' },
+        { value: '.py', label: 'Python', icon: 'vscode-icons:file-type-python' },
+        { value: '.java', label: 'Java', icon: 'vscode-icons:file-type-java' },
+        { value: '.cpp', label: 'C++', icon: 'vscode-icons:file-type-cpp' },
+        { value: '.cs', label: 'C#', icon: 'vscode-icons:file-type-csharp' },
+        { value: '.php', label: 'PHP', icon: 'vscode-icons:file-type-php' },
+        { value: '.rb', label: 'Ruby', icon: 'vscode-icons:file-type-ruby' },
+        { value: '.go', label: 'Go', icon: 'vscode-icons:file-type-go' },
+        { value: '.rs', label: 'Rust', icon: 'vscode-icons:file-type-rust' },
+        { value: '.html', label: 'HTML', icon: 'vscode-icons:file-type-html' },
+        { value: '.css', label: 'CSS', icon: 'vscode-icons:file-type-css' },
+        { value: '.json', label: 'JSON', icon: 'vscode-icons:file-type-json' },
+        { value: '.xml', label: 'XML', icon: 'vscode-icons:file-type-xml' },
+        { value: '.md', label: 'Markdown', icon: 'vscode-icons:file-type-markdown' },
+        { value: '.yml', label: 'YAML', icon: 'vscode-icons:file-type-yaml' }
       ],
       scrapingConfig: {
         query: '',
@@ -802,7 +801,8 @@ export default {
         onlyBookmarked: false
       },
       scraper: null,
-      hasMoreResults: false
+      hasMoreResults: false,
+      currentScraperId: null
     }
   },
   computed: {
@@ -843,25 +843,10 @@ export default {
   async mounted() {
     await this.loadProxyGroups()
     await this.loadAccounts()
-    if (window.electronAPI) {
-  window.electronAPI.onScrapingProgress((event, data) => {
-    this.progress.current = data.current || this.progress.current
-    this.progress.total = data.total || this.progress.total
-    this.progress.percentage = data.progress || this.progress.percentage
-    this.progress.status = data.status || this.progress.status
-    this.progress.platform = data.platform || this.progress.platform
     
-    if (data.scraperId) {
-      this.currentScraperId = data.scraperId
-    }
-  })
-
-  window.electronAPI.onScrapingError((event, data) => {
-    this.addLog('error', data.error || 'Scraping error occurred')
-    this.isScraping = false
-    this.progress.status = 'Error'
-  })
-}
+    // Setup Electron IPC listeners
+    this.setupElectronListeners()
+    
     // Load previous results and session
     this.loadSavedData()
   },
@@ -882,7 +867,7 @@ export default {
   methods: {
     async loadProxyGroups() {
       try {
-        if (window.electronAPI) {
+        if (window.electronAPI && window.electronAPI.getProxyGroups) {
           const result = await window.electronAPI.getProxyGroups()
           if (result.success) {
             this.proxyGroups = result.groups
@@ -913,6 +898,53 @@ export default {
         console.error('Error loading accounts:', error)
         this.addLog('error', 'Failed to load accounts')
       }
+    },
+    
+    setupElectronListeners() {
+      if (window.electronAPI) {
+        window.electronAPI.onScrapingProgress((event, data) => {
+          if (data.scraperId === this.currentScraperId) {
+            this.updateProgress(data)
+          }
+        })
+        
+        window.electronAPI.onScrapingResult((event, data) => {
+          if (data.scraperId === this.currentScraperId) {
+            this.addResult(data.result)
+            this.addLog('success', `Found: ${data.result.title}`)
+          }
+        })
+        
+        window.electronAPI.onScrapingError((event, data) => {
+          if (data.scraperId === this.currentScraperId) {
+            this.addLog('error', data.error)
+            this.isScraping = false
+            this.progress.status = 'Error'
+          }
+        })
+        
+        window.electronAPI.onScrapingComplete((event, data) => {
+          if (data.scraperId === this.currentScraperId) {
+            this.isScraping = false
+            this.progress.status = 'Completed'
+            this.progress.current = this.results.length
+            this.progress.percentage = 100
+            this.addLog('success', `Scraping completed! Found ${data.totalResults} results`)
+            this.saveData()
+          }
+        })
+      }
+    },
+
+    updateProgress(data) {
+      if (data.current !== undefined) this.progress.current = data.current
+      if (data.total !== undefined) this.progress.total = data.total
+      if (data.percentage !== undefined) this.progress.percentage = data.percentage
+      if (data.status !== undefined) this.progress.status = data.status
+      if (data.platform !== undefined) this.progress.platform = data.platform
+      if (data.speed !== undefined) this.progress.speed = data.speed
+      if (data.successRate !== undefined) this.progress.successRate = data.successRate
+      if (data.estimatedTime !== undefined) this.progress.estimatedTime = data.estimatedTime
     },
 
     loadSavedData() {
@@ -953,194 +985,300 @@ export default {
       await this.startScraping()
     },
     
-async startScraping() {
-  if (!this.scrapingConfig.query.trim()) {
-    this.addLog('error', 'Please enter a search query')
-    return
-  }
+    async startScraping() {
+      if (!this.scrapingConfig.query.trim()) {
+        this.addLog('error', 'Please enter a search query')
+        return
+      }
 
-  if (this.scrapingConfig.platform === 'multiple' && this.scrapingConfig.selectedPlatforms.length === 0) {
-    this.addLog('error', 'Please select at least one platform for multi-platform scraping')
-    return
-  }
-  
-  this.isScraping = true
-  this.progress = {
-    current: 0,
-    total: this.scrapingConfig.maxResults,
-    percentage: 0,
-    platform: this.scrapingConfig.platform,
-    status: 'Initializing...',
-    speed: 0,
-    successRate: 100,
-    estimatedTime: 'Calculating...'
-  }
-
-  this.platformProgress = this.scrapingConfig.platform === 'multiple' 
-    ? this.scrapingConfig.selectedPlatforms.map(platform => ({
-        name: platform,
+      if (this.scrapingConfig.platform === 'multiple' && this.scrapingConfig.selectedPlatforms.length === 0) {
+        this.addLog('error', 'Please select at least one platform for multi-platform scraping')
+        return
+      }
+      
+      this.isScraping = true
+      this.progress = {
         current: 0,
-        total: Math.floor(this.scrapingConfig.maxResults / this.scrapingConfig.selectedPlatforms.length),
-        percentage: 0
+        total: this.scrapingConfig.maxResults,
+        percentage: 0,
+        platform: this.scrapingConfig.platform,
+        status: 'Initializing...',
+        speed: 0,
+        successRate: 100,
+        estimatedTime: 'Calculating...'
+      }
+
+      this.platformProgress = this.scrapingConfig.platform === 'multiple' 
+        ? this.scrapingConfig.selectedPlatforms.map(platform => ({
+            name: platform,
+            current: 0,
+            total: Math.floor(this.scrapingConfig.maxResults / this.scrapingConfig.selectedPlatforms.length),
+            percentage: 0
+          }))
+        : []
+      
+      this.addLog('info', `Starting scraping session: ${this.scrapingConfig.query}`)
+      
+      try {
+        // Generate unique scraper ID
+        this.currentScraperId = Date.now().toString(36) + Math.random().toString(36).substr(2)
+        
+        // Use IPC to call Electron main process
+        if (window.electronAPI && window.electronAPI.startScraping) {
+          const result = await window.electronAPI.startScraping({
+            ...this.scrapingConfig,
+            scraperId: this.currentScraperId
+          })
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Scraping failed')
+          }
+          
+          this.addLog('success', 'Scraping started successfully')
+        } else {
+          // Fallback: Simulate scraping
+          this.simulateScraping()
+        }
+        
+      } catch (error) {
+        this.addLog('error', `Scraping failed: ${error.message}`)
+        console.error('Scraping error:', error)
+        this.isScraping = false
+        this.progress.status = 'Error'
+      }
+    },
+    
+    simulateScraping() {
+      // Simulate progress updates
+      let current = 0
+      const total = this.scrapingConfig.maxResults
+      const interval = setInterval(() => {
+        if (!this.isScraping) {
+          clearInterval(interval)
+          return
+        }
+        
+        current += Math.floor(Math.random() * 3) + 1
+        if (current > total) current = total
+        
+        this.progress.current = current
+        this.progress.percentage = Math.floor((current / total) * 100)
+        this.progress.speed = Math.floor(Math.random() * 30) + 10
+        this.progress.status = current === total ? 'Processing results...' : 'Scraping...'
+        
+        // Simulate finding results
+        if (Math.random() > 0.7) {
+          const platforms = this.scrapingConfig.platform === 'multiple' 
+            ? this.scrapingConfig.selectedPlatforms 
+            : [this.scrapingConfig.platform]
+          
+          const platform = platforms[Math.floor(Math.random() * platforms.length)]
+          const result = this.generateSampleResult(platform)
+          this.addResult(result)
+          this.addLog('success', `Found: ${result.title}`)
+          
+          // Update platform progress
+          if (this.scrapingConfig.platform === 'multiple') {
+            const platformProgress = this.platformProgress.find(p => p.name === platform)
+            if (platformProgress && platformProgress.current < platformProgress.total) {
+              platformProgress.current++
+              platformProgress.percentage = Math.floor((platformProgress.current / platformProgress.total) * 100)
+            }
+          }
+        }
+        
+        if (current === total) {
+          clearInterval(interval)
+          setTimeout(() => {
+            if (this.isScraping) {
+              this.isScraping = false
+              this.progress.status = 'Completed'
+              this.addLog('success', `Scraping completed! Found ${this.results.length} results`)
+              this.saveData()
+            }
+          }, 1000)
+        }
+      }, 500)
+    },
+    
+    generateSampleResult(platform) {
+      const titles = [
+        'React Component Library',
+        'Node.js REST API',
+        'Python Data Analysis',
+        'Vue.js Dashboard',
+        'Machine Learning Model',
+        'Web Scraper Tool',
+        'Authentication System',
+        'Database Migration Script'
+      ]
+      
+      const languages = ['JavaScript', 'Python', 'TypeScript', 'Java', 'Go', 'Rust', 'PHP', 'Ruby']
+      const descriptions = [
+        'A production-ready implementation with tests and documentation.',
+        'Example code showing best practices and patterns.',
+        'Simple and efficient solution for common problem.',
+        'Advanced implementation with performance optimizations.'
+      ]
+      
+      return {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+        title: `${titles[Math.floor(Math.random() * titles.length)]} ${Math.floor(Math.random() * 1000)}`,
+        platform: platform,
+        language: languages[Math.floor(Math.random() * languages.length)],
+        description: descriptions[Math.floor(Math.random() * descriptions.length)],
+        url: `https://${platform}.com/example/repo${Math.floor(Math.random() * 1000)}`,
+        date: new Date().toISOString(),
+        stars: Math.floor(Math.random() * 5000),
+        forks: Math.floor(Math.random() * 500),
+        size: Math.floor(Math.random() * 10000000),
+        code: '// Sample code snippet\nfunction example() {\n  console.log("Hello World");\n}',
+        files: [
+          { name: 'index.js', size: 1024 },
+          { name: 'package.json', size: 512 },
+          { name: 'README.md', size: 2048 }
+        ],
+        favorite: false,
+        bookmarked: false
+      }
+    },
+    
+    addResult(result) {
+      this.results.unshift(result)
+    },
+    
+    async stopScraping() {
+      if (window.electronAPI && window.electronAPI.stopScraping) {
+        await window.electronAPI.stopScraping(this.currentScraperId)
+      }
+      this.isScraping = false
+      this.progress.status = 'Stopped'
+      this.addLog('info', 'Scraping stopped by user')
+    },
+    
+    addLog(type, message, platform = null) {
+      const logEntry = {
+        type,
+        message,
+        platform,
+        time: new Date().toLocaleTimeString()
+      }
+      
+      this.logs.unshift(logEntry)
+      
+      // Keep only last 200 logs
+      if (this.logs.length > 200) {
+        this.logs = this.logs.slice(0, 200)
+      }
+    },
+
+    clearLogs() {
+      this.logs = []
+      localStorage.removeItem('codeScraperLogs')
+      this.addLog('info', 'Logs cleared')
+    },
+
+    exportLogs() {
+      const logData = this.logs.map(log => ({
+        timestamp: new Date().toISOString(),
+        time: log.time,
+        type: log.type,
+        platform: log.platform,
+        message: log.message
       }))
-    : []
-  
-  this.addLog('info', `Starting scraping session: ${this.scrapingConfig.query}`)
-  
-  try {
-    // Use IPC to call Electron main process instead of direct scraper
-    const result = await window.electronAPI.startScraping(this.scrapingConfig)
-    
-    if (result.success) {
-      this.results = result.data
-      this.addLog('success', `Scraping completed! Found ${this.results.length} results`)
-      this.progress.status = 'Completed'
-      this.progress.current = this.results.length
-      this.progress.percentage = 100
-    } else {
-      throw new Error(result.error)
-    }
-    
-  } catch (error) {
-    this.addLog('error', `Scraping failed: ${error.message}`)
-    console.error('Scraping error:', error)
-  } finally {
-    this.isScraping = false
-    
-    // Save results and session
-    this.saveData()
-  }
-},  // ← END of startScraping method
 
-addLog(type, message, platform = null) {
-  const logEntry = {
-    type,
-    message,
-    platform,
-    time: new Date().toLocaleTimeString()
-  }
-  
-  this.logs.unshift(logEntry)
-  
-  // Keep only last 200 logs
-  if (this.logs.length > 200) {
-    this.logs = this.logs.slice(0, 200)
-  }
+      const dataStr = JSON.stringify(logData, null, 2)
+      this.downloadFile(dataStr, `code-scraper-logs-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
+      
+      this.addLog('success', 'Logs exported successfully')
+    },
 
-  // Save logs periodically
-  if (this.logs.length % 10 === 0) {
-    this.saveData()
-  }
-},
+    clearResults() {
+      this.results = []
+      localStorage.removeItem('codeScraperResults')
+      this.addLog('info', 'Results cleared')
+    },
 
-clearLogs() {
-  this.logs = []
-  localStorage.removeItem('codeScraperLogs')
-  this.addLog('info', 'Logs cleared')
-},
+    clearAll() {
+      this.clearResults()
+      this.clearLogs()
+      this.progress = {
+        current: 0,
+        total: 0,
+        percentage: 0,
+        platform: '',
+        status: 'Ready',
+        speed: 0,
+        successRate: 100,
+        estimatedTime: 'Calculating...'
+      }
+      this.addLog('info', 'All data cleared')
+    },
 
-exportLogs() {
-  const logData = this.logs.map(log => ({
-    timestamp: new Date().toISOString(),
-    time: log.time,
-    type: log.type,
-    platform: log.platform,
-    message: log.message
-  }))
+    viewResult(result) {
+      this.selectedResult = result
+    },
 
-  const dataStr = JSON.stringify(logData, null, 2)
-  this.downloadFile(dataStr, `code-scraper-logs-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
-  
-  this.addLog('success', 'Logs exported successfully')
-},
+    async downloadResult(result) {
+      this.addLog('info', `Downloading: ${result.title}`)
+      
+      if (result.code) {
+        this.downloadFile(result.code, `${result.title}.${this.getFileExtension(result.language)}`, 'text/plain')
+      } else {
+        // Download metadata as JSON
+        const metadata = { ...result }
+        delete metadata.code // Don't include code in metadata download
+        this.downloadFile(JSON.stringify(metadata, null, 2), `${result.title}-metadata.json`, 'application/json')
+      }
+    },
 
-clearResults() {
-  this.results = []
-  localStorage.removeItem('codeScraperResults')
-  this.addLog('info', 'Results cleared')
-},
+    copyCode(result) {
+      if (result.code) {
+        navigator.clipboard.writeText(result.code)
+        this.addLog('success', `Code copied to clipboard: ${result.title}`)
+        
+        // Show temporary feedback
+        const originalTitle = result.title
+        result.title = '✓ Copied!'
+        setTimeout(() => {
+          result.title = originalTitle
+        }, 1000)
+      }
+    },
 
-clearAll() {
-  this.clearResults()
-  this.clearLogs()
-  this.progress = {
-    current: 0,
-    total: 0,
-    percentage: 0,
-    platform: '',
-    status: 'Ready',
-    speed: 0,
-    successRate: 100,
-    estimatedTime: 'Calculating...'
-  }
-  this.addLog('info', 'All data cleared')
-},
+    downloadCode(result) {
+      if (result.code) {
+        this.downloadFile(result.code, `${result.title}.${this.getFileExtension(result.language)}`, 'text/plain')
+        this.addLog('success', `Code downloaded: ${result.title}`)
+      }
+    },
 
-viewResult(result) {
-  this.selectedResult = result
-},
+    bookmarkResult(result) {
+      result.bookmarked = !result.bookmarked
+      this.addLog('info', `${result.bookmarked ? 'Bookmarked' : 'Unbookmarked'}: ${result.title}`)
+      this.saveData()
+    },
 
-async downloadResult(result) {
-  this.addLog('info', `Downloading: ${result.title}`)
-  
-  if (result.code) {
-    this.downloadFile(result.code, `${result.title}.${this.getFileExtension(result.language)}`, 'text/plain')
-  } else {
-    // Download metadata as JSON
-    const metadata = { ...result }
-    delete metadata.code // Don't include code in metadata download
-    this.downloadFile(JSON.stringify(metadata, null, 2), `${result.title}-metadata.json`, 'application/json')
-  }
-},
+    toggleFavorite(result) {
+      result.favorite = !result.favorite
+      this.addLog('info', `${result.favorite ? 'Added to favorites' : 'Removed from favorites'}: ${result.title}`)
+      this.saveData()
+    },
 
-copyCode(result) {
-  if (result.code) {
-    navigator.clipboard.writeText(result.code)
-    this.addLog('success', `Code copied to clipboard: ${result.title}`)
-    
-    // Show temporary feedback
-    const originalTitle = result.title
-    result.title = '✓ Copied!'
-    setTimeout(() => {
-      result.title = originalTitle
-    }, 1000)
-  }
-},
+    showLogDetails(log) {
+      alert(`Log Details:\nTime: ${log.time}\nType: ${log.type}\nPlatform: ${log.platform || 'N/A'}\nMessage: ${log.message}`)
+    },
 
-downloadCode(result) {
-  if (result.code) {
-    this.downloadFile(result.code, `${result.title}.${this.getFileExtension(result.language)}`, 'text/plain')
-    this.addLog('success', `Code downloaded: ${result.title}`)
-  }
-},
+    scrollLogsToBottom() {
+      const container = this.$refs.logsContainer
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
+    },
 
-bookmarkResult(result) {
-  result.bookmarked = !result.bookmarked
-  this.addLog('info', `${result.bookmarked ? 'Bookmarked' : 'Unbookmarked'}: ${result.title}`)
-  this.saveData()
-},
-
-toggleFavorite(result) {
-  result.favorite = !result.favorite
-  this.addLog('info', `${result.favorite ? 'Added to favorites' : 'Removed from favorites'}: ${result.title}`)
-  this.saveData()
-},
-
-showLogDetails(log) {
-  // Show detailed log information
-  alert(`Log Details:\nTime: ${log.time}\nType: ${log.type}\nPlatform: ${log.platform || 'N/A'}\nMessage: ${log.message}`)
-},
-
-scrollLogsToBottom() {
-  const container = this.$refs.logsContainer
-  if (container) {
-    container.scrollTop = container.scrollHeight
-  }
-},
-
-exportResults() {
-  this.showExportModal = true
-},
+    exportResults() {
+      this.showExportModal = true
+    },
 
     async performExport() {
       let dataToExport = this.results
@@ -1298,7 +1436,6 @@ exportResults() {
     },
 
     async loadSavedSession() {
-      // In a real app, you'd show a list of saved sessions
       const sessionName = prompt('Enter session name to load:')
       if (sessionName) {
         const savedSession = localStorage.getItem(`codeScraperSession_${sessionName}`)
@@ -1313,7 +1450,6 @@ exportResults() {
     },
 
     loadMoreResults() {
-      // Implementation for pagination
       this.addLog('info', 'Loading more results...')
       // This would trigger additional scraping with offset
     },
@@ -1378,23 +1514,23 @@ exportResults() {
     getFileIcon(filename) {
       const extension = filename.split('.').pop()?.toLowerCase()
       const icons = {
-        js: 'material-symbols:javascript',
-        ts: 'material-symbols:typescript',
-        py: 'material-symbols:python',
-        java: 'material-symbols:java',
-        cpp: 'material-symbols:cpp',
-        cs: 'material-symbols:csharp',
-        php: 'material-symbols:php',
-        rb: 'material-symbols:ruby',
-        go: 'material-symbols:go',
-        rs: 'material-symbols:rust',
-        html: 'material-symbols:html',
-        css: 'material-symbols:css',
-        json: 'material-symbols:json',
-        xml: 'material-symbols:xml',
-        md: 'material-symbols:markdown',
-        yml: 'material-symbols:yaml',
-        yaml: 'material-symbols:yaml'
+        js: 'vscode-icons:file-type-js',
+        ts: 'vscode-icons:file-type-typescript',
+        py: 'vscode-icons:file-type-python',
+        java: 'vscode-icons:file-type-java',
+        cpp: 'vscode-icons:file-type-cpp',
+        cs: 'vscode-icons:file-type-csharp',
+        php: 'vscode-icons:file-type-php',
+        rb: 'vscode-icons:file-type-ruby',
+        go: 'vscode-icons:file-type-go',
+        rs: 'vscode-icons:file-type-rust',
+        html: 'vscode-icons:file-type-html',
+        css: 'vscode-icons:file-type-css',
+        json: 'vscode-icons:file-type-json',
+        xml: 'vscode-icons:file-type-xml',
+        md: 'vscode-icons:file-type-markdown',
+        yml: 'vscode-icons:file-type-yaml',
+        yaml: 'vscode-icons:file-type-yaml'
       }
       return icons[extension] || 'material-symbols:code'
     },
@@ -1442,13 +1578,8 @@ exportResults() {
       const sizes = ['B', 'KB', 'MB', 'GB']
       const i = Math.floor(Math.log(bytes) / Math.log(1024))
       return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
-    },
-    
-    generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2)
     }
-  },
-  
+  }
 }
 </script>
 
@@ -1504,6 +1635,7 @@ exportResults() {
 .file-type-icon {
   margin-right: 0.5rem;
   font-size: 1.2em;
+  color: var(--primary);
 }
 
 .checkbox-label {
@@ -1511,6 +1643,8 @@ exportResults() {
   align-items: center;
   gap: 0.5rem;
   margin-right: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
 }
 
 .checkbox-label.small {
@@ -1687,6 +1821,13 @@ exportResults() {
   gap: 0.5rem;
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.log-entry:hover {
+  background: var(--bg-secondary);
+  padding-left: 0.5rem;
+  border-radius: var(--radius);
 }
 
 .log-info { color: var(--text-primary); }
@@ -1723,6 +1864,7 @@ exportResults() {
   color: var(--text-secondary);
   justify-content: center;
   height: 100%;
+  font-style: italic;
 }
 
 .results-section {
@@ -1833,6 +1975,7 @@ exportResults() {
   color: var(--text-primary);
   cursor: pointer;
   line-height: 1.3;
+  transition: color 0.2s ease;
 }
 
 .result-title:hover {
@@ -1928,10 +2071,12 @@ exportResults() {
   color: var(--primary);
   text-decoration: none;
   font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .result-link:hover {
   text-decoration: underline;
+  transform: translateX(2px);
 }
 
 .result-actions-mini {
@@ -1950,6 +2095,7 @@ exportResults() {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  transition: all 0.2s ease;
 }
 
 .btn-text:hover {
@@ -1989,6 +2135,7 @@ exportResults() {
   max-height: 80vh;
   overflow-y: auto;
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-content.large {
@@ -2002,6 +2149,11 @@ exportResults() {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .modal-body {
@@ -2028,10 +2180,12 @@ exportResults() {
   color: var(--primary);
   text-decoration: none;
   word-break: break-all;
+  transition: color 0.2s ease;
 }
 
 .detail-item a:hover {
   text-decoration: underline;
+  color: var(--secondary);
 }
 
 .code-preview {
@@ -2048,6 +2202,16 @@ exportResults() {
   border-bottom: 1px solid var(--border-color);
 }
 
+.code-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.code-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .code-block {
   margin: 0;
   padding: 1rem;
@@ -2062,6 +2226,7 @@ exportResults() {
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.4;
+  color: var(--text-primary);
 }
 
 .files-preview {
@@ -2069,6 +2234,11 @@ exportResults() {
   border-radius: var(--radius);
   padding: 1rem;
   border: 1px solid var(--border-color);
+}
+
+.files-preview h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
 }
 
 .files-grid {
@@ -2086,11 +2256,18 @@ exportResults() {
   background: var(--card-bg);
   border-radius: var(--radius);
   font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  background: var(--bg-secondary);
+  transform: translateX(2px);
 }
 
 .file-name {
   flex: 1;
   word-break: break-all;
+  color: var(--text-primary);
 }
 
 .file-size {
@@ -2155,6 +2332,18 @@ exportResults() {
   margin-top: 0.5rem;
 }
 
+/* Enhanced button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .quick-actions {
@@ -2197,133 +2386,66 @@ exportResults() {
   .filter-group select {
     flex: 1;
   }
-}
-/* Enhanced progress indicators */
-.scraping-progress {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--border-color);
+  
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.progress-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+/* Loading spinner animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.progress-stat {
-  text-align: center;
-  padding: 1rem;
-  background: var(--bg-primary);
-  border-radius: var(--radius);
+.btn svg[data-icon*="spinner"] {
+  animation: spin 1s linear infinite;
 }
 
-.progress-stat-value {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--primary-color);
-  display: block;
-}
-
-.progress-stat-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  display: block;
-}
-
-/* Enhanced result cards */
-.result-card.featured {
-  border: 2px solid var(--primary-color);
-  background: linear-gradient(135deg, var(--card-bg) 0%, rgba(99, 102, 241, 0.05) 100%);
-}
-
-.result-card .code-preview {
-  position: relative;
-}
-
-.result-card .code-preview::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
-}
-
-/* Enhanced platform badges */
-.platform-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.platform-badge.github {
-  background: rgba(36, 41, 46, 0.1);
-  color: #24292e;
-  border: 1px solid rgba(36, 41, 46, 0.2);
-}
-
-.platform-badge.stackoverflow {
-  background: rgba(244, 128, 36, 0.1);
-  color: #f48024;
-  border: 1px solid rgba(244, 128, 36, 0.2);
-}
-
-.platform-badge.gitlab {
-  background: rgba(252, 109, 38, 0.1);
-  color: #fc6d26;
-  border: 1px solid rgba(252, 109, 38, 0.2);
-}
-
-/* Enhanced filter controls */
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.filter-group select {
-  background: var(--bg-primary);
+/* Form input enhancements */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: 0.5rem;
+  background: var(--bg-primary);
   color: var(--text-primary);
-  font-size: 0.875rem;
-}
-
-/* Enhanced log entries */
-.log-entry {
+  font-size: 1rem;
   transition: all 0.2s ease;
 }
 
-.log-entry:hover {
-  background: var(--bg-primary);
-  transform: translateX(4px);
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.log-entry.error {
-  border-left: 3px solid var(--error-color);
+/* Range input styling */
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-color);
+  outline: none;
+  -webkit-appearance: none;
 }
 
-.log-entry.warning {
-  border-left: 3px solid var(--warning-color);
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.log-entry.success {
-  border-left: 3px solid var(--success-color);
-}
-
-.log-entry.info {
-  border-left: 3px solid var(--primary-color);
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 </style>

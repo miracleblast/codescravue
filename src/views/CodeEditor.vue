@@ -19,265 +19,246 @@
       </div>
     </div>
 
-    <!-- Main Editor Layout -->
-    <div class="editor-layout">
-      <!-- Sidebar - File Explorer -->
-      <div class="editor-sidebar">
-        <div class="sidebar-header">
-          <h3>File Explorer</h3>
-          <div class="sidebar-actions">
-            <button class="btn-icon" @click="refreshFiles" title="Refresh">
-              <iconify-icon icon="material-symbols:refresh"></iconify-icon>
-            </button>
-            <button class="btn-icon" @click="createNewFile" title="New File">
-              <iconify-icon icon="material-symbols:add"></iconify-icon>
-            </button>
-            <button class="btn-icon" @click="createNewFolder" title="New Folder">
-              <iconify-icon icon="material-symbols:create-new-folder"></iconify-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- File Tree -->
-        <div class="file-tree">
-          <div class="tree-header">
-            <div class="tree-search">
-              <iconify-icon icon="material-symbols:search" class="search-icon"></iconify-icon>
-              <input type="text" v-model="fileSearch" placeholder="Search files..." class="search-input">
-            </div>
-          </div>
-
-          <div class="tree-content">
-            <file-tree-node
-              v-for="item in filteredFileTree"
-              :key="item.path"
-              :node="item"
-              :selected-file="currentFile"
-              @select="selectFile"
-              @rename="renameFile"
-              @delete="deleteFile"
-            />
-          </div>
-        </div>
-
-        <!-- Recent Files -->
-        <div class="recent-files">
-          <h4>Recent Files</h4>
-          <div class="recent-list">
-            <div v-for="file in recentFiles" :key="file.path" 
-                 class="recent-item" :class="{ active: currentFile?.path === file.path }"
-                 @click="selectFile(file)">
-              <iconify-icon :icon="getFileIcon(file.name)"></iconify-icon>
-              <span class="recent-name">{{ file.name }}</span>
-              <span class="recent-path">{{ getRelativePath(file.path) }}</span>
-            </div>
-          </div>
-        </div>
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+      <div class="toggle-buttons">
+        <button class="toggle-btn" :class="{ active: currentMode === 'advanced' }" 
+                @click="currentMode = 'advanced'">
+          <iconify-icon icon="material-symbols:code-blocks"></iconify-icon>
+          Advanced Editor
+        </button>
+        <button class="toggle-btn" :class="{ active: currentMode === 'simple' }" 
+                @click="currentMode = 'simple'">
+          <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+          Quick Runner
+        </button>
       </div>
+    </div>
 
-      <!-- Main Editor Area -->
-      <div class="editor-main">
-        <!-- Editor Tabs -->
-        <div class="editor-tabs">
-          <div v-for="tab in openTabs" :key="tab.path" 
-               class="editor-tab" :class="{ active: currentFile?.path === tab.path }"
-               @click="selectFile(tab)">
-            <iconify-icon :icon="getFileIcon(tab.name)"></iconify-icon>
-            <span class="tab-name">{{ tab.name }}</span>
-            <button class="tab-close" @click.stop="closeTab(tab)">
-              <iconify-icon icon="material-symbols:close"></iconify-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- Editor Toolbar -->
-        <div class="editor-toolbar">
-          <div class="toolbar-left">
-            <select v-model="currentLanguage" class="language-select">
-              <option v-for="lang in supportedLanguages" :key="lang.value" :value="lang.value">
-                {{ lang.name }}
-              </option>
-            </select>
-            
-            <div class="toolbar-buttons">
-              <button class="btn-icon" @click="saveFile" :disabled="!currentFile" title="Save (Ctrl+S)">
-                <iconify-icon icon="material-symbols:save"></iconify-icon>
+    <!-- Advanced Editor Mode -->
+    <div v-if="currentMode === 'advanced'" class="advanced-editor-mode">
+      <!-- Main Editor Layout -->
+      <div class="editor-layout">
+        <!-- Sidebar - File Explorer -->
+        <div class="editor-sidebar">
+          <div class="sidebar-header">
+            <h3>File Explorer</h3>
+            <div class="sidebar-actions">
+              <button class="btn-icon" @click="refreshFiles" title="Refresh">
+                <iconify-icon icon="material-symbols:refresh"></iconify-icon>
               </button>
-              <button class="btn-icon" @click="formatCode" :disabled="!currentFile" title="Format Code">
-                <iconify-icon icon="material-symbols:format_ink_highlighter"></iconify-icon>
+              <button class="btn-icon" @click="createNewFile" title="New File">
+                <iconify-icon icon="material-symbols:add"></iconify-icon>
               </button>
-              <button class="btn-icon" @click="findInFile" title="Find (Ctrl+F)">
-                <iconify-icon icon="material-symbols:search"></iconify-icon>
-              </button>
-              <button class="btn-icon" @click="toggleComment" :disabled="!currentFile" title="Toggle Comment">
-                <iconify-icon icon="material-symbols:format_quote"></iconify-icon>
+              <button class="btn-icon" @click="createNewFolder" title="New Folder">
+                <iconify-icon icon="material-symbols:create-new-folder"></iconify-icon>
               </button>
             </div>
           </div>
 
-          <div class="toolbar-right">
-            <div class="editor-info">
-              <span class="cursor-position">Ln {{ cursorLine }}, Col {{ cursorColumn }}</span>
-              <span class="file-size" v-if="currentFile">{{ formatFileSize(currentFile.size) }}</span>
+          <!-- File Tree -->
+          <div class="file-tree">
+            <div class="tree-header">
+              <div class="tree-search">
+                <iconify-icon icon="material-symbols:search" class="search-icon"></iconify-icon>
+                <input type="text" v-model="fileSearch" placeholder="Search files..." class="search-input">
+              </div>
             </div>
-            
-            <div class="toolbar-buttons">
-              <button class="btn-icon" @click="toggleSidebar" title="Toggle Sidebar">
-                <iconify-icon icon="material-symbols:sidebar"></iconify-icon>
-              </button>
-              <button class="btn-icon" @click="toggleTheme" :title="`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`">
-                <iconify-icon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></iconify-icon>
-              </button>
-              <button class="btn-icon" @click="zoomOut" title="Zoom Out">
-                <iconify-icon icon="material-symbols:zoom-out"></iconify-icon>
-              </button>
-              <button class="btn-icon" @click="zoomIn" title="Zoom In">
-                <iconify-icon icon="material-symbols:zoom-in"></iconify-icon>
-              </button>
+
+            <div class="tree-content">
+              <file-tree-node
+                v-for="item in filteredFileTree"
+                :key="item.path"
+                :node="item"
+                :selected-file="currentFile"
+                @select="selectFile"
+                @rename="renameFile"
+                @delete="deleteFile"
+              />
+            </div>
+          </div>
+
+          <!-- Recent Files -->
+          <div class="recent-files">
+            <h4>Recent Files</h4>
+            <div class="recent-list">
+              <div v-for="file in recentFiles" :key="file.path" 
+                   class="recent-item" :class="{ active: currentFile?.path === file.path }"
+                   @click="selectFile(file)">
+                <iconify-icon :icon="getFileIcon(file.name)"></iconify-icon>
+                <span class="recent-name">{{ file.name }}</span>
+                <span class="recent-path">{{ getRelativePath(file.path) }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Code Editor -->
-        <div class="code-editor-container">
-          <div class="editor-line-numbers">
-            <div v-for="line in visibleLines" :key="line" 
-                 class="line-number" :class="{ active: line === cursorLine }">
-              {{ line }}
+        <!-- Main Editor Area -->
+        <div class="editor-main">
+          <!-- Editor Tabs -->
+          <div class="editor-tabs">
+            <div v-for="tab in openTabs" :key="tab.path" 
+                 class="editor-tab" :class="{ active: currentFile?.path === tab.path }"
+                 @click="selectFile(tab)">
+              <iconify-icon :icon="getFileIcon(tab.name)"></iconify-icon>
+              <span class="tab-name">{{ tab.name }}</span>
+              <button class="tab-close" @click.stop="closeTab(tab)">
+                <iconify-icon icon="material-symbols:close"></iconify-icon>
+              </button>
             </div>
           </div>
 
-<textarea
-  ref="editorTextarea"
-  v-model="editorContent"
-  @input="handleContentChange"
-  @keydown="handleKeydown"
-  @scroll="handleScroll"
-  @click="updateCursorPosition"
-  @keyup="updateCursorPosition"
-  class="code-editor"
-  :style="editorStyles"
-  spellcheck="false"
-></textarea>
-          <!-- Syntax Highlighting Overlay -->
-          <div class="syntax-highlighting" ref="highlightOverlay"
-               :style="editorStyles">
-            <div v-for="(line, index) in highlightedLines" :key="index" 
-                 class="highlight-line" v-html="line"></div>
-          </div>
-        </div>
-
-        <!-- Editor Status Bar -->
-        <div class="editor-statusbar">
-          <div class="status-left">
-            <span class="status-item" v-if="currentFile">
-              {{ currentLanguage.toUpperCase() }}
-            </span>
-            <span class="status-item" v-if="currentFile">
-              {{ lineCount }} lines
-            </span>
-            <span class="status-item" v-if="currentFile">
-              {{ characterCount }} characters
-            </span>
-          </div>
-          <div class="status-right">
-            <span class="status-item">
-              Encoding: UTF-8
-            </span>
-            <span class="status-item">
-              Line Endings: LF
-            </span>
-            <span class="status-item" @click="toggleWordWrap" style="cursor: pointer">
-              Wrap: {{ wordWrap ? 'On' : 'Off' }}
-            </span>
-          </div>
-        </div>
-      </div>
-          <!-- Live Preview Section -->
-          <div v-if="showPreview" class="preview-section">
-            <div class="preview-header">
-              <h4>Live Preview</h4>
-              <div class="preview-actions">
-                <button class="btn-icon" @click="refreshPreview" title="Refresh Preview">
-                  <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+          <!-- Editor Toolbar -->
+          <div class="editor-toolbar">
+            <div class="toolbar-left">
+              <select v-model="currentLanguage" class="language-select" @change="handleLanguageChange">
+                <option v-for="lang in supportedLanguages" :key="lang.value" :value="lang.value">
+                  {{ lang.name }}
+                </option>
+              </select>
+              
+              <div class="toolbar-buttons">
+                <button class="btn-icon" @click="saveFile" :disabled="!currentFile" title="Save (Ctrl+S)">
+                  <iconify-icon icon="material-symbols:save"></iconify-icon>
                 </button>
-                <button class="btn-icon" @click="openInNewWindow" title="Open in New Window">
-                  <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                <button class="btn-icon" @click="formatCode" :disabled="!currentFile" title="Format Code">
+                  <iconify-icon icon="material-symbols:format_ink_highlighter"></iconify-icon>
                 </button>
-                <button class="btn-icon" @click="togglePreview" title="Close Preview">
-                  <iconify-icon icon="material-symbols:close"></iconify-icon>
+                <button class="btn-icon" @click="findInFile" title="Find (Ctrl+F)">
+                  <iconify-icon icon="material-symbols:search"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="toggleComment" :disabled="!currentFile" title="Toggle Comment">
+                  <iconify-icon icon="material-symbols:format_quote"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="togglePreview" :title="showPreview ? 'Hide Preview' : 'Show Preview'">
+                  <iconify-icon :icon="showPreview ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></iconify-icon>
                 </button>
               </div>
             </div>
-            
-            <div class="preview-content">
-              <!-- HTML Preview -->
-              <iframe 
-                v-if="isHtmlFile && showPreview"
-                ref="previewFrame"
-                class="preview-frame"
-                sandbox="allow-scripts allow-same-origin"
-                :srcdoc="generatePreviewHtml()"
-              ></iframe>
+
+            <div class="toolbar-right">
+              <div class="editor-info">
+                <span class="cursor-position">Ln {{ cursorLine }}, Col {{ cursorColumn }}</span>
+                <span class="file-size" v-if="currentFile">{{ formatFileSize(currentFile.size) }}</span>
+              </div>
               
-              <!-- CSS Preview -->
-              <div v-else-if="isCssFile" class="css-preview">
-                <div class="css-preview-container" :style="cssPreviewStyle">
-                  <div class="css-preview-content">
-                    <h3>CSS Preview</h3>
-                    <p>This is a preview of your CSS styles</p>
-                    <button class="btn btn-primary">Styled Button</button>
-                    <div class="preview-card">
-                      <h4>Card Title</h4>
-                      <p>This card demonstrates your CSS styles</p>
-                    </div>
+              <div class="toolbar-buttons">
+                <button class="btn-icon" @click="toggleSidebar" title="Toggle Sidebar">
+                  <iconify-icon icon="material-symbols:sidebar"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="toggleTheme" :title="`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`">
+                  <iconify-icon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="zoomOut" title="Zoom Out">
+                  <iconify-icon icon="material-symbols:zoom-out"></iconify-icon>
+                </button>
+                <button class="btn-icon" @click="zoomIn" title="Zoom In">
+                  <iconify-icon icon="material-symbols:zoom-in"></iconify-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Editor and Preview Container -->
+          <div class="editor-preview-container" :class="{ 'preview-active': showPreview }">
+            <!-- Code Editor -->
+            <div class="code-editor-section">
+              <div class="code-editor-container">
+                <div class="editor-line-numbers">
+                  <div v-for="line in visibleLines" :key="line" 
+                       class="line-number" :class="{ active: line === cursorLine }">
+                    {{ line }}
                   </div>
+                </div>
+
+                <textarea
+                  ref="editorTextarea"
+                  v-model="editorContent"
+                  @input="handleContentChange"
+                  @keydown="handleKeydown"
+                  @scroll="handleScroll"
+                  @click="updateCursorPosition"
+                  @keyup="updateCursorPosition"
+                  class="code-editor"
+                  :style="editorStyles"
+                  spellcheck="false"
+                ></textarea>
+
+                <!-- Syntax Highlighting Overlay -->
+                <div class="syntax-highlighting" ref="highlightOverlay"
+                     :style="editorStyles">
+                  <div v-for="(line, index) in highlightedLines" :key="index" 
+                       class="highlight-line" v-html="line"></div>
+                </div>
+              </div>
+
+              <!-- Editor Status Bar -->
+              <div class="editor-statusbar">
+                <div class="status-left">
+                  <span class="status-item" v-if="currentFile">
+                    {{ currentLanguage.toUpperCase() }}
+                  </span>
+                  <span class="status-item" v-if="currentFile">
+                    {{ lineCount }} lines
+                  </span>
+                  <span class="status-item" v-if="currentFile">
+                    {{ characterCount }} characters
+                  </span>
+                </div>
+                <div class="status-right">
+                  <span class="status-item">
+                    Encoding: UTF-8
+                  </span>
+                  <span class="status-item">
+                    Line Endings: LF
+                  </span>
+                  <span class="status-item" @click="toggleWordWrap" style="cursor: pointer">
+                    Wrap: {{ wordWrap ? 'On' : 'Off' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Preview Section -->
+            <div v-if="showPreview" class="preview-section">
+              <div class="preview-header">
+                <h4>Live Preview</h4>
+                <div class="preview-actions">
+                  <button class="btn-icon" @click="refreshPreview" title="Refresh Preview">
+                    <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                  </button>
+                  <button class="btn-icon" @click="openInNewWindow" title="Open in New Window">
+                    <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                  </button>
+                  <button class="btn-icon" @click="togglePreview" title="Close Preview">
+                    <iconify-icon icon="material-symbols:close"></iconify-icon>
+                  </button>
                 </div>
               </div>
               
-              <!-- JavaScript Console -->
-              <div v-else-if="isJsFile" class="js-preview">
-                <div class="console-output" ref="consoleOutput">
-                  <div class="console-header">
-                    <h4>JavaScript Console</h4>
-                    <button class="btn-icon" @click="clearConsole" title="Clear Console">
-                      <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
-                    </button>
+              <div class="preview-content">
+                <iframe 
+                  v-if="isHtmlFile && showPreview"
+                  ref="previewFrame"
+                  class="preview-frame"
+                  sandbox="allow-scripts allow-same-origin"
+                  :srcdoc="generatePreviewHtml()"
+                ></iframe>
+                
+                <!-- Default Preview for other file types -->
+                <div v-else class="default-preview">
+                  <div class="preview-placeholder">
+                    <iconify-icon icon="material-symbols:code" class="preview-icon"></iconify-icon>
+                    <h3>Live Preview</h3>
+                    <p>Preview is available for HTML files</p>
                   </div>
-                  <div class="console-messages">
-                    <div v-for="(message, index) in consoleMessages" :key="index" 
-                         class="console-message" :class="message.type">
-                      <span class="message-time">{{ message.time }}</span>
-                      <span class="message-content">{{ message.content }}</span>
-                    </div>
-                  </div>
-                  <div class="console-input">
-                    <input 
-                      type="text" 
-                      v-model="consoleInput" 
-                      @keyup.enter="executeConsoleInput"
-                      placeholder="Enter JavaScript code..."
-                      class="console-input-field"
-                    >
-                    <button class="btn-icon" @click="executeConsoleInput" title="Execute">
-                      <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Default Preview for other file types -->
-              <div v-else class="default-preview">
-                <div class="preview-placeholder">
-                  <iconify-icon icon="material-symbols:code" class="preview-icon"></iconify-icon>
-                  <h3>Live Preview</h3>
-                  <p>Preview is available for HTML, CSS, and JavaScript files</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
       <!-- Right Panel - File Info & Tools -->
       <div class="editor-right-panel" v-if="showRightPanel">
         <div class="panel-tabs">
@@ -370,6 +351,110 @@
                 <span class="result-preview">{{ result.preview }}</span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simple Code Runner Mode -->
+    <div v-if="currentMode === 'simple'" class="simple-runner-mode">
+      <section class="code-editor-section">
+        <h2 class="section-title">
+          <iconify-icon class="section-title-icon" icon="material-symbols:code-blocks"></iconify-icon>
+          Code Editor & Preview
+        </h2>
+        
+        <div class="editor-container">
+          <div class="editor-toolbar">
+            <div class="editor-title">Code Editor</div>
+            <div class="editor-actions">
+              <button class="btn btn-outline" @click="clearSimpleCode" style="padding: 0.5rem;">
+                <iconify-icon icon="material-symbols:clear"></iconify-icon>
+                Clear
+              </button>
+              <button class="btn btn-primary" @click="runSimpleCode" style="padding: 0.5rem;">
+                <iconify-icon class="btn-icon" icon="material-symbols:play-arrow"></iconify-icon>
+                Run Code
+              </button>
+            </div>
+          </div>
+          <div class="editor-content">
+            <textarea 
+              class="code-input" 
+              v-model="simpleCode" 
+              placeholder="Enter your HTML, CSS, and JavaScript code here..."
+              @input="autoRunDebounced"
+            ></textarea>
+            <div class="output-container">
+              <div class="output-header">
+                Preview
+                <div class="output-actions">
+                  <button class="btn-icon" @click="refreshSimplePreview" title="Refresh">
+                    <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                  </button>
+                  <button class="btn-icon" @click="openSimpleInNewWindow" title="Open in New Window">
+                    <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                  </button>
+                </div>
+              </div>
+              <div class="output-content">
+                <iframe 
+                  v-if="simpleCode.trim()"
+                  ref="simplePreviewFrame"
+                  class="preview-frame simple-preview"
+                  sandbox="allow-scripts allow-same-origin"
+                  :srcdoc="generateSimplePreviewHtml()"
+                ></iframe>
+                <div v-else class="no-code-placeholder">
+                  <iconify-icon icon="material-symbols:code" class="placeholder-icon"></iconify-icon>
+                  <p style="color: var(--text-secondary); text-align: center; margin-top: 2rem;">
+                    Code output will appear here after running
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Code Templates -->
+      <div class="code-templates-section">
+        <h3 class="section-title">
+          <iconify-icon class="section-title-icon" icon="material-symbols:library-books"></iconify-icon>
+          Quick Templates
+        </h3>
+        
+        <div class="templates-grid">
+          <div class="template-card" @click="loadTemplate('html-basic')">
+            <div class="template-icon">
+              <iconify-icon icon="material-symbols:html"></iconify-icon>
+            </div>
+            <h4>Basic HTML</h4>
+            <p>Simple HTML page structure</p>
+          </div>
+          
+          <div class="template-card" @click="loadTemplate('html-css-js')">
+            <div class="template-icon">
+              <iconify-icon icon="material-symbols:code-blocks"></iconify-icon>
+            </div>
+            <h4>HTML + CSS + JS</h4>
+            <p>Complete web page with styling</p>
+          </div>
+          
+          <div class="template-card" @click="loadTemplate('bootstrap')">
+            <div class="template-icon">
+              <iconify-icon icon="simple-icons:bootstrap"></iconify-icon>
+            </div>
+            <h4>Bootstrap Template</h4>
+            <p>Responsive Bootstrap layout</p>
+          </div>
+          
+          <div class="template-card" @click="loadTemplate('api-test')">
+            <div class="template-icon">
+              <iconify-icon icon="material-symbols:api"></iconify-icon>
+            </div>
+            <h4>API Test</h4>
+            <p>Fetch API testing template</p>
           </div>
         </div>
       </div>
@@ -489,7 +574,6 @@ const FileTreeNode = {
     isSelected() {
       return this.selectedFile?.path === this.node.path
     },
-    
     isFile() {
       return this.node.type === 'file'
     },
@@ -570,7 +654,7 @@ const FileTreeNode = {
   `
 }
 
-// Helper function to get file icon
+// Helper function
 function getFileIcon(fileName) {
   const extension = fileName.split('.').pop()?.toLowerCase()
   const iconMap = {
@@ -580,30 +664,19 @@ function getFileIcon(fileName) {
     css: 'material-symbols:css',
     py: 'material-symbols:python',
     java: 'material-symbols:java',
-    cpp: 'material-symbols:cpp',
-    c: 'material-symbols:c',
-    php: 'material-symbols:php',
     json: 'material-symbols:json',
-    xml: 'material-symbols:xml',
     md: 'material-symbols:markdown',
-    txt: 'material-symbols:description',
-    pdf: 'material-symbols:pdf',
-    zip: 'material-symbols:folder-zip',
-    exe: 'material-symbols:windows'
+    txt: 'material-symbols:description'
   }
   return iconMap[extension] || 'material-symbols:description'
 }
 
-// Helper function to get outline icon
 function getOutlineIcon(type) {
   const iconMap = {
     function: 'material-symbols:function',
     class: 'material-symbols:class',
     method: 'material-symbols:method',
-    property: 'material-symbols:property',
-    variable: 'material-symbols:variable',
-    import: 'material-symbols:import',
-    export: 'material-symbols:export'
+    property: 'material-symbols:property'
   }
   return iconMap[type] || 'material-symbols:code'
 }
@@ -615,34 +688,71 @@ export default {
   },
   data() {
     return {
-      // Preview features
-      showPreview: false,
-      consoleMessages: [],
-      consoleInput: '',
-      previewKey: 0, // Force iframe reload
+      // Mode selection
+      currentMode: 'advanced', // 'advanced' or 'simple'
       
-      // Enhanced editor stats
+      // Simple runner data
+      simpleCode: `<!DOCTYPE html>
+<html>
+<head>
+    <title>CodeScraper Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: linear-gradient(135deg, #2563EB, #0EA5E9);
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        button {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to CodeScraper Pro!</h1>
+        <p>This is a test page running in the built-in code editor.</p>
+        <button onclick="showMessage()">Click Me!</button>
+        <div id="output"></div>
+    </div>
+    <script>
+        function showMessage() {
+            document.getElementById('output').innerHTML = '<h3>Code execution successful! 🎉</h3>';
+        }
+    <\/script>
+</body>
+</html>`,
+      
+      // Advanced editor data
       editorStats: [
         { id: 1, label: 'Open Files', value: '0', icon: 'material-symbols:file-open', class: 'stat-primary' },
         { id: 2, label: 'Total Files', value: '0', icon: 'material-symbols:folder', class: 'stat-secondary' },
         { id: 3, label: 'Lines of Code', value: '0', icon: 'material-symbols:code', class: 'stat-success' },
         { id: 4, label: 'Preview', value: 'Ready', icon: 'material-symbols:visibility', class: 'stat-warning' }
       ],
-
-      // File system
       fileTree: [],
-      storageLocations: [],
       recentFiles: [],
       openTabs: [],
       currentFile: null,
-
-      // Editor content
       editorContent: '',
       originalContent: '',
       isContentModified: false,
-
-      // Editor state
-      currentLanguage: 'javascript',
+      currentLanguage: 'html',
       cursorLine: 1,
       cursorColumn: 1,
       fontSize: 14,
@@ -650,11 +760,30 @@ export default {
       wordWrap: false,
       isDarkTheme: true,
       showRightPanel: true,
-
-      // Search and find
+      showPreview: false,
       fileSearch: '',
       searchQuery: '',
       searchResults: [],
+      fileOutline: [],
+      supportedLanguages: [
+        { name: 'HTML', value: 'html' },
+        { name: 'CSS', value: 'css' },
+        { name: 'JavaScript', value: 'javascript' },
+        { name: 'TypeScript', value: 'typescript' },
+        { name: 'Python', value: 'python' },
+        { name: 'JSON', value: 'json' },
+        { name: 'Markdown', value: 'markdown' }
+      ],
+      highlightedLines: [],
+      visibleLines: [],
+      storageLocations: [
+        { name: 'Projects', path: '/projects' },
+        { name: 'Scraped Code', path: '/scraped' },
+        { name: 'Templates', path: '/templates' }
+      ],
+      newFileName: '',
+      newFileLocation: '',
+      showNewFileModal: false,
       showFindModal: false,
       findQuery: '',
       replaceQuery: '',
@@ -663,52 +792,14 @@ export default {
         wholeWord: false,
         regex: false
       },
-
-      // Modals
-      showNewFileModal: false,
-      newFileName: '',
-      newFileLocation: '',
-
-      // Right panel
-      rightPanelTab: 'info',
-
-      // Supported languages
-      supportedLanguages: [
-        { name: 'JavaScript', value: 'javascript' },
-        { name: 'TypeScript', value: 'typescript' },
-        { name: 'HTML', value: 'html' },
-        { name: 'CSS', value: 'css' },
-        { name: 'Python', value: 'python' },
-        { name: 'Java', value: 'java' },
-        { name: 'C++', value: 'cpp' },
-        { name: 'PHP', value: 'php' },
-        { name: 'JSON', value: 'json' },
-        { name: 'XML', value: 'xml' },
-        { name: 'Markdown', value: 'markdown' },
-        { name: 'Plain Text', value: 'text' }
-      ],
-
-      // Syntax highlighting
-      highlightedLines: [],
-      visibleLines: [],
-
-      // File outline
-      fileOutline: []
+      rightPanelTab: 'info'
     }
   },
-
   computed: {
-    editorStyles() {
-    return {
-      fontSize: this.fontSize + 'px',
-      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-      lineHeight: this.lineHeight + 'px'
-    }
-  },
     filteredFileTree() {
       if (!this.fileSearch) return this.fileTree
-      
       const searchLower = this.fileSearch.toLowerCase()
+      
       const filterTree = (nodes) => {
         return nodes.filter(node => {
           if (node.name.toLowerCase().includes(searchLower)) return true
@@ -722,51 +813,23 @@ export default {
       
       return filterTree([...this.fileTree])
     },
-
     lineCount() {
       return this.editorContent.split('\n').length
     },
-
     characterCount() {
       return this.editorContent.length
-    }
-  },
-   // Preview-related computed properties
+    },
     isHtmlFile() {
       return this.currentFile && (this.currentFile.name.endsWith('.html') || this.currentLanguage === 'html')
     },
-    
-    isCssFile() {
-      return this.currentFile && (this.currentFile.name.endsWith('.css') || this.currentLanguage === 'css')
-    },
-    
-    isJsFile() {
-      return this.currentFile && (this.currentFile.name.endsWith('.js') || this.currentFile.name.endsWith('.ts') || this.currentLanguage === 'javascript' || this.currentLanguage === 'typescript')
-    },
-    
-    cssPreviewStyle() {
-      if (!this.isCssFile) return {}
-      
-      // Create a style element to apply the CSS
-      const style = document.createElement('style')
-      style.textContent = this.editorContent
-      
-      // For demo purposes, we'll just return some basic styles
-      // In a real implementation, you'd properly parse and apply the CSS
-      return {
-        fontFamily: 'Arial, sans-serif',
-        padding: '20px'
-      }
-    },
-    
     editorStyles() {
       return {
         fontSize: this.fontSize + 'px',
         fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
         lineHeight: this.lineHeight + 'px'
       }
-    },
-
+    }
+  },
   watch: {
     currentFile(newFile) {
       if (newFile) {
@@ -780,270 +843,97 @@ export default {
       }
       this.updateStats()
     },
-
     editorContent(newContent) {
       this.isContentModified = newContent !== this.originalContent
       this.updateSyntaxHighlighting()
       this.updateFileOutline()
     },
-
     currentLanguage() {
       this.updateSyntaxHighlighting()
       this.updateFileOutline()
     }
   },
-
-  async mounted() {
-    await this.loadFileTree()
-    await this.loadStorageLocations()
+  mounted() {
+    this.loadFileTree()
+    this.loadStorageLocations()
     this.setupKeyboardShortcuts()
     this.updateVisibleLines()
     this.updateStats()
-    this.setupConsoleInterception()
+    this.autoRunDebounced = this.debounce(() => {
+      this.runSimpleCode()
+    }, 1000)
   },
-
-  },
-   editorContent() {
-      // Auto-refresh preview when content changes
-      if (this.showPreview && this.isHtmlFile) {
-        this.debouncedRefreshPreview()
-      }
-    },
-    
-    currentFile() {
-      // Auto-show preview for HTML files
-      if (this.currentFile && this.isHtmlFile) {
-        this.showPreview = true
-      }
-    },
-
   methods: {
-    // File operations
-    async loadFileTree() {
-      try {
-        if (window.electronAPI && window.electronAPI.getFileTree) {
-          const result = await window.electronAPI.getFileTree()
-          if (result.success) {
-            this.fileTree = result.tree
-          }
-        } else {
-          // Fallback: Load sample file tree
-          this.loadSampleFileTree()
+    // ========================
+    // SIMPLE RUNNER METHODS
+    // ========================
+    runSimpleCode() {
+      this.$nextTick(() => {
+        if (this.$refs.simplePreviewFrame) {
+          console.log('Code executed successfully!')
         }
-      } catch (error) {
-        console.error('Failed to load file tree:', error)
-        this.loadSampleFileTree()
+      })
+    },
+    clearSimpleCode() {
+      this.simpleCode = ''
+    },
+    refreshSimplePreview() {
+      this.$nextTick(() => {
+        this.runSimpleCode()
+      })
+    },
+    openSimpleInNewWindow() {
+      const newWindow = window.open('', '_blank')
+      newWindow.document.write(this.generateSimplePreviewHtml())
+      newWindow.document.close()
+    },
+    generateSimplePreviewHtml() {
+      return this.simpleCode
+    },
+    loadTemplate(templateKey) {
+      const templates = {
+        'html-basic': `<!DOCTYPE html>\n<html>\n<head>\n    <title>Basic HTML Page</title>\n</head>\n<body>\n    <h1>Hello World!</h1>\n</body>\n</html>`,
+        'html-css-js': `<!DOCTYPE html>\n<html>\n<head>\n    <title>My Page</title>\n    <style>\n        body { font-family: Arial; }\n    </style>\n</head>\n<body>\n    <h1>Welcome</h1>\n    <script>\n        console.log('Hello!');\n    <\/script>\n</body>\n</html>`,
+        'bootstrap': `<!DOCTYPE html>\n<html>\n<head>\n    <title>Bootstrap</title>\n    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">\n</head>\n<body>\n    <div class="container">\n        <h1>Bootstrap Page</h1>\n    </div>\n</body>\n</html>`,
+        'api-test': `<!DOCTYPE html>\n<html>\n<head>\n    <title>API Test</title>\n</head>\n<body>\n    <h1>API Test Page</h1>\n    <div id="result"></div>\n    <script>\n        fetch('https://jsonplaceholder.typicode.com/todos/1')\n            .then(response => response.json())\n            .then(data => {\n                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);\n            });\n    <\/script>\n</body>\n</html>`
+      }
+      
+      if (templates[templateKey]) {
+        this.simpleCode = templates[templateKey]
+        this.currentMode = 'simple'
       }
     },
-
-    loadSampleFileTree() {
+    // ========================
+    // ADVANCED EDITOR METHODS
+    // ========================
+    loadFileTree() {
+      // Load sample data for now
       this.fileTree = [
         {
-          name: 'src',
-          path: '/projects/src',
+          name: 'projects',
+          path: '/projects',
           type: 'folder',
           children: [
             {
-              name: 'components',
-              path: '/projects/src/components',
+              name: 'web-app',
+              path: '/projects/web-app',
               type: 'folder',
               children: [
-                { name: 'Button.js', path: '/projects/src/components/Button.js', type: 'file', size: 2048, modified: new Date() },
-                { name: 'Header.js', path: '/projects/src/components/Header.js', type: 'file', size: 4096, modified: new Date() }
+                { name: 'index.html', path: '/projects/web-app/index.html', type: 'file', size: 1024, modified: new Date() },
+                { name: 'styles.css', path: '/projects/web-app/styles.css', type: 'file', size: 2048, modified: new Date() },
+                { name: 'app.js', path: '/projects/web-app/app.js', type: 'file', size: 3072, modified: new Date() }
               ]
-            },
-            {
-              name: 'utils',
-              path: '/projects/src/utils',
-              type: 'folder',
-              children: [
-                { name: 'helpers.js', path: '/projects/src/utils/helpers.js', type: 'file', size: 1024, modified: new Date() }
-              ]
-            },
-            { name: 'index.js', path: '/projects/src/index.js', type: 'file', size: 512, modified: new Date() },
-            { name: 'styles.css', path: '/projects/src/styles.css', type: 'file', size: 8192, modified: new Date() }
+            }
           ]
-        },
-        {
-          name: 'public',
-          path: '/projects/public',
-          type: 'folder',
-          children: [
-            { name: 'index.html', path: '/projects/public/index.html', type: 'file', size: 1024, modified: new Date() }
-          ]
-        },
-        { name: 'package.json', path: '/projects/package.json', type: 'file', size: 512, modified: new Date() },
-        { name: 'README.md', path: '/projects/README.md', type: 'file', size: 2048, modified: new Date() }
+        }
       ]
-    },
-  // Preview methods
-    togglePreview() {
-      this.showPreview = !this.showPreview
       this.updateStats()
     },
-    
-    handleLanguageChange() {
-      // Auto-show preview for supported file types
-      if (this.isHtmlFile || this.isCssFile) {
-        this.showPreview = true
-      }
+    loadStorageLocations() {
+      // Already initialized in data()
     },
-    
-    generatePreviewHtml() {
-      if (!this.isHtmlFile) return ''
-      
-      let htmlContent = this.editorContent
-      
-      // Ensure basic HTML structure if missing
-      if (!htmlContent.includes('<html')) {
-        htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background: white; 
-            color: black;
-        }
-        .preview-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            color: #856404;
-        }
-    </style>
-</head>
-<body>
-    <div class="preview-warning">
-        Live Preview - Content from Code Editor
-    </div>
-    ${htmlContent}
-</body>
-</html>`
-      }
-      
-      return htmlContent
-    },
-    
-    refreshPreview() {
-      this.previewKey++
-      this.addConsoleMessage('info', 'Preview refreshed')
-    },
-    
-    openInNewWindow() {
-      if (this.isHtmlFile) {
-        const newWindow = window.open('', '_blank')
-        newWindow.document.write(this.generatePreviewHtml())
-        newWindow.document.close()
-      }
-    },
-    
-    // Console methods
-    addConsoleMessage(type, content) {
-      this.consoleMessages.push({
-        type,
-        content,
-        time: new Date().toLocaleTimeString()
-      })
-      
-      // Keep only last 100 messages
-      if (this.consoleMessages.length > 100) {
-        this.consoleMessages = this.consoleMessages.slice(-100)
-      }
-      
-      // Auto-scroll to bottom
-      this.$nextTick(() => {
-        const container = this.$refs.consoleOutput
-        if (container) {
-          container.scrollTop = container.scrollHeight
-        }
-      })
-    },
-    
-    clearConsole() {
-      this.consoleMessages = []
-    },
-    
-    executeConsoleInput() {
-      if (!this.consoleInput.trim()) return
-      
-      try {
-        // Add input to console
-        this.addConsoleMessage('input', `> ${this.consoleInput}`)
-        
-        // Execute the code
-        const result = eval(this.consoleInput)
-        
-        // Add result to console
-        this.addConsoleMessage('output', String(result))
-        
-      } catch (error) {
-        this.addConsoleMessage('error', error.message)
-      }
-      
-      this.consoleInput = ''
-    },
-    
-    // Enhanced stats update
-    updateStats() {
-      this.editorStats = [
-        { id: 1, label: 'Open Files', value: this.openTabs.length.toString(), icon: 'material-symbols:file-open', class: 'stat-primary' },
-        { id: 2, label: 'Total Files', value: this.countTotalFiles().toString(), icon: 'material-symbols:folder', class: 'stat-secondary' },
-        { id: 3, label: 'Lines of Code', value: this.lineCount.toString(), icon: 'material-symbols:code', class: 'stat-success' },
-        { id: 4, label: 'Preview', value: this.showPreview ? 'Active' : 'Ready', icon: 'material-symbols:visibility', class: 'stat-warning' }
-      ]
-    },
-    
-    // Debounced preview refresh
-    debouncedRefreshPreview: null
-  },
-  
-  created() {
-    // Setup debounced preview refresh
-    this.debouncedRefreshPreview = this.debounce(() => {
-      this.refreshPreview()
-    }, 500)
-  },
-    async loadStorageLocations() {
-      try {
-        if (window.electronAPI && window.electronAPI.getStorageLocations) {
-          const result = await window.electronAPI.getStorageLocations()
-          if (result.success) {
-            this.storageLocations = result.locations
-            this.newFileLocation = this.storageLocations[0]?.path || ''
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load storage locations:', error)
-      }
-    },
-
-    async loadFileContent(file) {
-      try {
-        if (window.electronAPI && window.electronAPI.readFile) {
-          const result = await window.electronAPI.readFile(file.path)
-          if (result.success) {
-            this.editorContent = result.content
-            this.originalContent = result.content
-            this.isContentModified = false
-          }
-        } else {
-          // Fallback: Load sample content based on file type
-          this.loadSampleFileContent(file)
-        }
-      } catch (error) {
-        console.error('Failed to load file content:', error)
-        this.editorContent = '// Error loading file content'
-      }
-    },
-
-    loadSampleFileContent(file) {
+    loadFileContent(file) {
+      // Load sample content
       const extension = file.name.split('.').pop()
       const sampleContent = {
         js: `// ${file.name}\nfunction greet(name) {\n  return "Hello, " + name + "!";\n}\n\nconst message = greet("World");\nconsole.log(message);`,
@@ -1055,35 +945,17 @@ export default {
       this.editorContent = sampleContent[extension] || `// ${file.name}\n// File content would be loaded here`
       this.originalContent = this.editorContent
       this.isContentModified = false
+      this.currentLanguage = extension
     },
-
-    async saveFile() {
+    saveFile() {
       if (!this.currentFile) return
-
-      try {
-        if (window.electronAPI && window.electronAPI.writeFile) {
-          const result = await window.electronAPI.writeFile(this.currentFile.path, this.editorContent)
-          if (result.success) {
-            this.originalContent = this.editorContent
-            this.isContentModified = false
-            this.updateStats()
-          }
-        } else {
-          // Fallback: Simulate save
-          this.originalContent = this.editorContent
-          this.isContentModified = false
-          this.updateStats()
-          console.log('File saved successfully (simulated)')
-        }
-      } catch (error) {
-        console.error('Failed to save file:', error)
-      }
+      this.originalContent = this.editorContent
+      this.isContentModified = false
+      this.updateStats()
+      console.log('File saved (simulated)')
     },
-
-    // File selection and management
     selectFile(file) {
       if (file.type === 'file') {
-        // Check if file is already open in tabs
         const existingTab = this.openTabs.find(tab => tab.path === file.path)
         if (!existingTab) {
           this.openTabs.push(file)
@@ -1091,11 +963,9 @@ export default {
         this.currentFile = file
       }
     },
-
     closeTab(tab) {
       const index = this.openTabs.findIndex(t => t.path === tab.path)
       if (index !== -1) {
-        // Check if content is modified
         if (this.isContentModified && this.currentFile?.path === tab.path) {
           if (!confirm('You have unsaved changes. Are you sure you want to close this file?')) {
             return
@@ -1104,7 +974,6 @@ export default {
         
         this.openTabs.splice(index, 1)
         
-        // If we're closing the current file, select another tab or clear
         if (this.currentFile?.path === tab.path) {
           if (this.openTabs.length > 0) {
             this.currentFile = this.openTabs[this.openTabs.length - 1]
@@ -1114,7 +983,6 @@ export default {
         }
       }
     },
-
     addToRecent(file) {
       const existingIndex = this.recentFiles.findIndex(f => f.path === file.path)
       if (existingIndex !== -1) {
@@ -1122,99 +990,43 @@ export default {
       }
       this.recentFiles.unshift(file)
       
-      // Keep only last 10 files
       if (this.recentFiles.length > 10) {
         this.recentFiles.pop()
       }
     },
-
-    // Editor functionality
-    setupKeyboardShortcuts() {
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          switch (e.key) {
-            case 's':
-              e.preventDefault()
-              this.saveFile()
-              break
-            case 'f':
-              e.preventDefault()
-              this.showFindModal = true
-              break
-            case 'z':
-              e.preventDefault()
-              // Undo functionality would go here
-              break
-            case 'y':
-              e.preventDefault()
-              // Redo functionality would go here
-              break
-            case '/':
-              e.preventDefault()
-              this.toggleComment()
-              break
-          }
-        }
-      })
+    updateStats() {
+      const totalFiles = this.countTotalFiles()
+      this.editorStats = [
+        { id: 1, label: 'Open Files', value: this.openTabs.length.toString(), icon: 'material-symbols:file-open', class: 'stat-primary' },
+        { id: 2, label: 'Total Files', value: totalFiles.toString(), icon: 'material-symbols:folder', class: 'stat-secondary' },
+        { id: 3, label: 'Lines of Code', value: this.lineCount.toString(), icon: 'material-symbols:code', class: 'stat-success' },
+        { id: 4, label: 'Preview', value: this.showPreview ? 'Active' : 'Ready', icon: 'material-symbols:visibility', class: 'stat-warning' }
+      ]
     },
-
-    handleContentChange() {
-      // Content change is handled by watcher
-    },
-
-    handleKeydown(e) {
-      // Handle tab key for indentation
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        this.insertText('  ') // Two spaces for indentation
+    countTotalFiles() {
+      const countFiles = (nodes) => {
+        return nodes.reduce((count, node) => {
+          if (node.type === 'file') return count + 1
+          if (node.children) return count + countFiles(node.children)
+          return count
+        }, 0)
       }
+      return countFiles(this.fileTree)
     },
-
-    insertText(text) {
-      const textarea = this.$refs.editorTextarea
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      
-      this.editorContent = this.editorContent.substring(0, start) + text + this.editorContent.substring(end)
-      
-      // Set cursor position after inserted text
-      this.$nextTick(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + text.length
-        textarea.focus()
-      })
-    },
-
-    updateCursorPosition() {
-      const textarea = this.$refs.editorTextarea
-      const text = textarea.value.substring(0, textarea.selectionStart)
-      const lines = text.split('\n')
-      this.cursorLine = lines.length
-      this.cursorColumn = lines[lines.length - 1].length + 1
-    },
-
-    handleScroll() {
-      this.updateVisibleLines()
-    },
-
     updateVisibleLines() {
       const lineCount = this.lineCount
       this.visibleLines = Array.from({ length: lineCount }, (_, i) => i + 1)
     },
-
-    // Syntax highlighting (simplified)
     updateSyntaxHighlighting() {
       const lines = this.editorContent.split('\n')
       this.highlightedLines = lines.map(line => {
-        // Simple JavaScript highlighting for demo
         if (this.currentLanguage === 'javascript') {
           return this.highlightJavaScript(line)
         }
         return this.escapeHtml(line)
       })
     },
-
     highlightJavaScript(line) {
-      // Simple keyword highlighting for demo
       const keywords = ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class']
       let highlighted = this.escapeHtml(line)
       
@@ -1223,22 +1035,16 @@ export default {
         highlighted = highlighted.replace(regex, `<span class="keyword">${keyword}</span>`)
       })
       
-      // Highlight strings
       highlighted = highlighted.replace(/(['"])(.*?)\1/g, '<span class="string">$1$2$1</span>')
-      
-      // Highlight comments
       highlighted = highlighted.replace(/\/\/.*$/g, '<span class="comment">$&</span>')
       
       return highlighted
     },
-
     escapeHtml(text) {
       const div = document.createElement('div')
       div.textContent = text
       return div.innerHTML
     },
-
-    // File outline
     updateFileOutline() {
       if (!this.currentFile) {
         this.fileOutline = []
@@ -1252,9 +1058,7 @@ export default {
         const lineNumber = index + 1
         const trimmed = line.trim()
 
-        // Simple JavaScript outline detection
         if (this.currentLanguage === 'javascript') {
-          // Function detection
           const functionMatch = trimmed.match(/function\s+(\w+)\s*\(/)
           if (functionMatch) {
             this.fileOutline.push({
@@ -1264,7 +1068,6 @@ export default {
             })
           }
 
-          // Class detection
           const classMatch = trimmed.match(/class\s+(\w+)/)
           if (classMatch) {
             this.fileOutline.push({
@@ -1273,35 +1076,19 @@ export default {
               line: lineNumber
             })
           }
-
-          // Method detection (in classes)
-          const methodMatch = trimmed.match(/(\w+)\s*\([^)]*\)\s*{/)
-          if (methodMatch && !trimmed.startsWith('function') && !trimmed.startsWith('class')) {
-            this.fileOutline.push({
-              name: methodMatch[1],
-              type: 'method',
-              line: lineNumber
-            })
-          }
         }
       })
     },
-
-    // UI actions
     refreshFiles() {
       this.loadFileTree()
     },
-
     createNewFile() {
       this.newFileName = ''
       this.showNewFileModal = true
     },
-
     createNewFolder() {
-      // Implementation for creating new folder
-      console.log('Create new folder functionality')
+      console.log('Create new folder')
     },
-
     createFile() {
       if (!this.newFileName) return
 
@@ -1317,7 +1104,13 @@ export default {
       this.selectFile(newFile)
       this.closeNewFileModal()
     },
-
+    closeNewFileModal() {
+      this.showNewFileModal = false
+      this.newFileName = ''
+    },
+    closeFindModal() {
+      this.showFindModal = false
+    },
     renameFile(node, newName) {
       node.name = newName
       node.path = node.path.replace(/[^/]+$/, newName)
@@ -1327,11 +1120,9 @@ export default {
         this.currentFile.path = node.path
       }
     },
-
     deleteFile(node) {
       if (!confirm(`Are you sure you want to delete "${node.name}"?`)) return
 
-      // Remove from file tree
       const removeFromTree = (nodes) => {
         return nodes.filter(n => {
           if (n.path === node.path) return false
@@ -1343,83 +1134,123 @@ export default {
       }
 
       this.fileTree = removeFromTree(this.fileTree)
-
-      // Remove from open tabs
       this.closeTab(node)
-
-      // Remove from recent files
       this.recentFiles = this.recentFiles.filter(f => f.path !== node.path)
     },
-
     formatCode() {
-      // Simple formatting for demo
-      if (this.currentLanguage === 'javascript') {
-        // Basic indentation formatting
-        const lines = this.editorContent.split('\n')
-        let indentLevel = 0
-        const formatted = lines.map(line => {
-          const trimmed = line.trim()
-          if (trimmed.endsWith('}') || trimmed.endsWith(']') || trimmed.endsWith(')')) {
-            indentLevel = Math.max(0, indentLevel - 1)
-          }
-          
-          const indented = '  '.repeat(indentLevel) + trimmed
-          
-          if (trimmed.endsWith('{') || trimmed.endsWith('[') || trimmed.endsWith('(')) {
-            indentLevel++
-          }
-          
-          return indented
-        }).join('\n')
-        
-        this.editorContent = formatted
-      }
+      console.log('Format code')
     },
-
-    toggleComment() {
-      const textarea = this.$refs.editorTextarea
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const selectedText = this.editorContent.substring(start, end)
-      
-      let commentedText
-      if (this.currentLanguage === 'javascript') {
-        commentedText = selectedText.split('\n').map(line => {
-          return line.trim().startsWith('//') ? line.replace(/^\/\//, '') : '//' + line
-        }).join('\n')
-      }
-      
-      this.editorContent = this.editorContent.substring(0, start) + commentedText + this.editorContent.substring(end)
-    },
-
     findInFile() {
       this.showFindModal = true
-      this.$nextTick(() => {
-        document.getElementById('findInput')?.focus()
+    },
+    toggleComment() {
+      console.log('Toggle comment')
+    },
+    togglePreview() {
+      this.showPreview = !this.showPreview
+    },
+    handleLanguageChange() {
+      console.log('Language changed:', this.currentLanguage)
+    },
+    refreshPreview() {
+      console.log('Refresh preview')
+    },
+    openInNewWindow() {
+      if (this.isHtmlFile) {
+        const newWindow = window.open('', '_blank')
+        newWindow.document.write(this.generatePreviewHtml())
+        newWindow.document.close()
+      }
+    },
+    generatePreviewHtml() {
+      if (!this.isHtmlFile) return ''
+      
+      let htmlContent = this.editorContent
+      if (!htmlContent.includes('<html')) {
+        htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Preview</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n    </style>\n</head>\n<body>\n    ${htmlContent}\n</body>\n</html>`
+      }
+      
+      return htmlContent
+    },
+    getRelativePath(fullPath) {
+      return fullPath.split('/').slice(-2).join('/')
+    },
+    formatFileSize(bytes) {
+      if (!bytes) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleString()
+    },
+    getFileIcon(fileName) {
+      return getFileIcon(fileName)
+    },
+    getOutlineIcon(type) {
+      return getOutlineIcon(type)
+    },
+    setupKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault()
+          this.saveFile()
+        }
       })
     },
-
-    findNext() {
-      this.performSearch(this.findQuery)
+    handleContentChange() {
+      // Handled by watcher
     },
-
-    findPrevious() {
-      // Implementation for find previous
-      console.log('Find previous functionality')
+    handleKeydown(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        this.insertText('  ')
+      }
     },
-
-    replaceNext() {
-      // Implementation for replace next
-      console.log('Replace next functionality')
-    },
-
-    replaceAll() {
-      if (!this.findQuery) return
+    insertText(text) {
+      const textarea = this.$refs.editorTextarea
+      if (!textarea) return
       
-      const regex = new RegExp(this.findQuery, this.findOptions.caseSensitive ? 'g' : 'gi')
-      this.editorContent = this.editorContent.replace(regex, this.replaceQuery)
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      
+      this.editorContent = this.editorContent.substring(0, start) + text + this.editorContent.substring(end)
+      
+      this.$nextTick(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + text.length
+        textarea.focus()
+      })
     },
-
+    updateCursorPosition() {
+      const textarea = this.$refs.editorTextarea
+      if (!textarea) return
+      
+      const text = textarea.value.substring(0, textarea.selectionStart)
+      const lines = text.split('\n')
+      this.cursorLine = lines.length
+      this.cursorColumn = lines[lines.length - 1].length + 1
+    },
+    handleScroll() {
+      this.updateVisibleLines()
+    },
+    toggleSidebar() {
+      this.showRightPanel = !this.showRightPanel
+    },
+    toggleTheme() {
+      this.isDarkTheme = !this.isDarkTheme
+    },
+    zoomIn() {
+      this.fontSize = Math.min(this.fontSize + 1, 24)
+      this.lineHeight = this.fontSize + 6
+    },
+    zoomOut() {
+      this.fontSize = Math.max(this.fontSize - 1, 10)
+      this.lineHeight = this.fontSize + 6
+    },
+    toggleWordWrap() {
+      this.wordWrap = !this.wordWrap
+    },
     performSearch() {
       if (!this.searchQuery) {
         this.searchResults = []
@@ -1441,102 +1272,40 @@ export default {
         }
       })
     },
-
     clearSearch() {
       this.searchQuery = ''
       this.searchResults = []
     },
-
     goToLine(lineNumber) {
       const textarea = this.$refs.editorTextarea
+      if (!textarea) return
+      
       const lines = this.editorContent.split('\n')
       let position = 0
       
       for (let i = 0; i < lineNumber - 1; i++) {
-        position += lines[i].length + 1 // +1 for newline
+        position += lines[i].length + 1
       }
       
       textarea.focus()
       textarea.selectionStart = textarea.selectionEnd = position
       this.updateCursorPosition()
     },
-
-    toggleSidebar() {
-      this.showRightPanel = !this.showRightPanel
+    findNext() {
+      this.performSearch()
     },
-
-    toggleTheme() {
-      this.isDarkTheme = !this.isDarkTheme
+    findPrevious() {
+      console.log('Find previous')
     },
-
-    zoomIn() {
-      this.fontSize = Math.min(this.fontSize + 1, 24)
-      this.lineHeight = this.fontSize + 6
+    replaceNext() {
+      console.log('Replace next')
     },
-
-    zoomOut() {
-      this.fontSize = Math.max(this.fontSize - 1, 10)
-      this.lineHeight = this.fontSize + 6
+    replaceAll() {
+      if (!this.findQuery) return
+      
+      const regex = new RegExp(this.findQuery, this.findOptions.caseSensitive ? 'g' : 'gi')
+      this.editorContent = this.editorContent.replace(regex, this.replaceQuery)
     },
-
-    toggleWordWrap() {
-      this.wordWrap = !this.wordWrap
-    },
-
-    // Utility methods
-    getFileIcon(fileName) {
-      return getFileIcon(fileName)
-    },
-
-    getOutlineIcon(type) {
-      return getOutlineIcon(type)
-    },
-
-    getRelativePath(fullPath) {
-      return fullPath.split('/').slice(-2).join('/')
-    },
-
-    formatFileSize(bytes) {
-      if (bytes === 0) return '0 B'
-      const k = 1024
-      const sizes = ['B', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    },
-
-    formatDate(date) {
-      return new Date(date).toLocaleString()
-    },
-
-    updateStats() {
-      this.editorStats = [
-        { id: 1, label: 'Open Files', value: this.openTabs.length.toString(), icon: 'material-symbols:file-open', class: 'stat-primary' },
-        { id: 2, label: 'Total Files', value: this.countTotalFiles().toString(), icon: 'material-symbols:folder', class: 'stat-secondary' },
-        { id: 3, label: 'Lines of Code', value: this.lineCount.toString(), icon: 'material-symbols:code', class: 'stat-success' },
-        { id: 4, label: 'Last Saved', value: 'Just now', icon: 'material-symbols:schedule', class: 'stat-warning' }
-      ]
-    },
-
-    countTotalFiles() {
-      const countFiles = (nodes) => {
-        return nodes.reduce((count, node) => {
-          if (node.type === 'file') return count + 1
-          if (node.children) return count + countFiles(node.children)
-          return count
-        }, 0)
-      }
-      return countFiles(this.fileTree)
-    },
-
-    closeFindModal() {
-      this.showFindModal = false
-    },
-
-    closeNewFileModal() {
-      this.showNewFileModal = false
-      this.newFileName = ''
-    },
-        // Utility method for debouncing
     debounce(func, wait) {
       let timeout
       return function executedFunction(...args) {
@@ -1547,30 +1316,9 @@ export default {
         clearTimeout(timeout)
         timeout = setTimeout(later, wait)
       }
-    },
-    
-    setupConsoleInterception() {
-      // Intercept console.log and friends to show in our console
-      const originalLog = console.log
-      const originalError = console.error
-      const originalWarn = console.warn
-      
-      console.log = (...args) => {
-        this.addConsoleMessage('output', args.join(' '))
-        originalLog.apply(console, args)
-      }
-      
-      console.error = (...args) => {
-        this.addConsoleMessage('error', args.join(' '))
-        originalError.apply(console, args)
-      }
-      
-      console.warn = (...args) => {
-        this.addConsoleMessage('warning', args.join(' '))
-        originalWarn.apply(console, args)
-      }
     }
-  
+  }
+}
 </script>
 
 <style scoped>
@@ -2810,6 +2558,212 @@ export default {
   
   .preview-section {
     flex: 1;
+  }
+}
+/* Mode Toggle */
+.mode-toggle {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.toggle-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.toggle-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Simple Runner Mode */
+.simple-runner-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Simple Editor Container */
+.editor-container {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.editor-content {
+  display: flex;
+  height: 500px;
+}
+
+.code-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-color);
+}
+
+.output-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.output-header {
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.output-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.output-content {
+  flex: 1;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+.preview-frame.simple-preview {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+.no-code-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Code Templates */
+.code-templates-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.template-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+.template-icon {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.template-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.template-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .editor-content {
+    flex-direction: column;
+    height: 800px;
+  }
+  
+  .code-input {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .toggle-buttons {
+    flex-direction: column;
+  }
+  
+  .templates-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

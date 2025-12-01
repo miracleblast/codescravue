@@ -118,11 +118,12 @@
                   <label for="language">Language</label>
                   <select id="language" v-model="settings.general.language" class="form-select">
                     <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="ja">日本語</option>
+                    <option value="zw">Swahili</option>
+                    <option value="ar">arabic</option>
+                    <option value="ru">russian</option>
                     <option value="zh">中文</option>
+                    <option value="hd">hindi</option>
+                    <option value="es">Español</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -853,7 +854,7 @@
                     <li>We only store your license key on our server for validation</li>
                     <li>No personal data is collected or stored</li>
                     <li>All scraping data remains on your computer</li>
-                    <li>No usage analytics or tracking</li>
+                    <li>No usage analytics, no cookies, no ads or tracking</li>
                   </ul>
                 </div>
                 <div class="license-section">
@@ -874,11 +875,10 @@
                 <iconify-icon icon="material-symbols:desktop-windows"></iconify-icon>
               </div>
               <div class="desktop-info">
-                <p>This web version demonstrates the interface. For full functionality:</p>
+                <p>Always check for the last update:</p>
                 <ol>
-                  <li>Download the desktop app from <strong>harambee.sbs</strong></li>
+                  <li>Download the desktop app from <strong>bisi.o / bisi.neo / bisi.libre</strong></li>
                   <li>Available for Windows (.exe), macOS (.dmg), and Linux (.AppImage/.tar)</li>
-                  <li>Your license key works across all platforms</li>
                   <li>All data remains locally on your computer</li>
                 </ol>
               </div>
@@ -894,26 +894,19 @@
                 <p><strong>Need help? Contact us through any of these private methods:</strong></p>
                 
                 <div class="contact-methods">
-                  <div class="contact-method">
-                    <iconify-icon icon="material-symbols:mail" class="contact-icon"></iconify-icon>
-                    <div class="contact-info">
-                      <strong>Email</strong>
-                      <p>support@harambee.sbs</p>
-                    </div>
-                  </div>
                   
                   <div class="contact-method">
                     <iconify-icon icon="material-symbols:chat" class="contact-icon"></iconify-icon>
                     <div class="contact-info">
                       <strong>Jabber/XMPP</strong>
-                      <p>support@harambee.sbs</p>
+                      <p>bisi.libre@xmpp.chat</p>
                     </div>
                   </div>
                   
                   <div class="contact-method">
-                    <iconify-icon icon="material-symbols:forum" class="contact-icon"></iconify-icon>
+                    <iconify-icon icon="simple-icons:session" class="contact-icon"></iconify-icon>
                     <div class="contact-info">
-                      <strong>Session Messenger</strong>
+                      <strong>Session Messenger</strong> 
                       <p>Download Session and contact us via our public key</p>
                     </div>
                   </div>
@@ -921,15 +914,15 @@
                   <div class="contact-method">
                     <iconify-icon icon="material-symbols:send" class="contact-icon"></iconify-icon>
                     <div class="contact-info">
-                      <strong>Telegram</strong>
-                      <p>@harambeesupport</p>
+                      <strong>Telegram</strong> 
+                      <p>@bisisupport</p>
                     </div>
                   </div>
                 </div>
 
                 <div class="support-note">
                   <iconify-icon icon="material-symbols:info"></iconify-icon>
-                  <p>We are not a corporation - we're a small team focused on privacy and humanitarian work. 
+                  <p>We are not a corporation - we're a very small team focused on privacy and humanitarian work. 
                   Choose the contact method that feels most comfortable for you.</p>
                 </div>
               </div>
@@ -978,7 +971,7 @@
                 <iconify-icon icon="material-symbols:gavel"></iconify-icon>
               </div>
               <div class="legal-info">
-                <p>CodeScraper Pro &copy; 2024. All rights reserved.</p>
+                <p>CodeScraper Pro &copy; 2025. All rights reserved by bisi.</p>
                 <p>This software is provided as-is without any warranty. Use at your own risk.</p>
                 <p><strong>Privacy Guarantee:</strong> We collect absolutely no data from our users. Your privacy is our priority.</p>
               </div>
@@ -1156,7 +1149,7 @@ export default {
       // App and system info
       appInfo: {
         version: '1.0.0',
-        build: '2024.1.0'
+        build: '2025.1.0'
       },
       systemInfo: {
         platform: 'Unknown',
