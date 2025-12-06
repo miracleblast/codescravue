@@ -823,7 +823,7 @@
             <div class="about-card">
               <div class="app-info">
                 <div class="app-icon">
-                  <iconify-icon icon="material-symbols:code" class="icon-large"></iconify-icon>
+                  <iconify-icon icon="proicons:code" width="24" height="24"  style="color: #0434ff" class="icon-large"></iconify-icon>
                 </div>
                 <div class="app-details">
                   <h3>CodeScraper Pro</h3>
@@ -1174,6 +1174,7 @@ export default {
   },
 
   computed: {
+    
     hasUnsavedChanges() {
       return (sectionId) => {
         if (!this.originalSettings[sectionId]) return false
@@ -2710,5 +2711,98 @@ export default {
 
 .about-section h3 {
   color: var(--text-primary) !important;
+}
+
+/* Fix for about section text colors */
+.about-content {
+  background: var(--card-bg) !important;
+}
+
+.about-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.about-card h3,
+.about-card h4 {
+  color: var(--text-primary) !important;
+}
+
+.about-card p,
+.about-card li,
+.about-card span {
+  color: var(--text-secondary) !important;
+}
+
+/* Mission card special styling */
+.mission-card {
+  background: linear-gradient(135deg, 
+    hsl(var(--primary-hue), var(--primary-sat), 40%) 0%, 
+    hsl(var(--accent-hue), var(--accent-sat), 45%) 100%
+  ) !important;
+  border: none;
+}
+
+.mission-card,
+.mission-card h3,
+.mission-card h4,
+.mission-card p,
+.mission-card li {
+  color: white !important;
+}
+
+.mission-list li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* System info specific styling */
+.info-item label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.info-item span {
+  color: var(--text-secondary);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Legal info */
+.legal-info p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Contact methods */
+.contact-info strong {
+  color: var(--text-primary);
+}
+
+.contact-info p {
+  color: var(--text-secondary);
+}
+
+/* If you don't have CSS variables defined, add these root variables */
+:root {
+  --primary-hue: 250;
+  --primary-sat: 95%;
+  --accent-hue: 280;
+  --accent-sat: 85%;
+}
+
+.dark {
+  --text-primary: #ffffff;
+  --text-secondary: #a0aec0;
+  --card-bg: #1a202c;
+  --bg-secondary: #2d3748;
+  --border-color: #4a5568;
+}
+
+.light {
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --card-bg: #ffffff;
+  --bg-secondary: #f7fafc;
+  --border-color: #e2e8f0;
 }
 </style>

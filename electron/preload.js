@@ -24,7 +24,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cancelScraping: (scraperId) => ipcRenderer.invoke('cancel-scraping', scraperId),
   getRecentResults: () => ipcRenderer.invoke('get-recent-results'),
   
+  // System Monitoring
+  getSystemStats: () => ipcRenderer.invoke('get-system-stats'),
+  getActiveJobs: () => ipcRenderer.invoke('get-active-jobs'),
+  getPerformanceMetrics: () => ipcRenderer.invoke('get-performance-metrics'),
+  adjustConcurrency: (settings) => ipcRenderer.invoke('adjust-concurrency', settings),
+  stopJob: (jobId) => ipcRenderer.invoke('stop-job', jobId),
+  
   // Events
+  onSystemStatsUpdate: (callback) => ipcRenderer.on('system-stats-update', callback),
   onScrapingProgress: (callback) => ipcRenderer.on('scraping-progress', callback),
   onScrapingError: (callback) => ipcRenderer.on('scraping-error', callback),
   

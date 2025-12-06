@@ -1,12 +1,49 @@
 <template>
   <div class="scraper">
-    <!-- Scraper Overview -->
-  <div class="tab-content active" id="scraper">
-    <div class="tab-header">
-      <h2><iconify-icon icon="iconamoon:cloud-download-light"></iconify-icon> Advanced Code Scraper</h2>
-      <p>Extract code from multiple platforms with intelligent filtering and real-time monitoring</p>
+    <!-- Control Bar -->
+    <div class="control-bar">
+      <div class="status-indicators">
+        <div class="status-indicator" @click="openMonitoringModal" title="System Monitor">
+          <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+          <span class="indicator-value">{{ miniStats.cpu }}%</span>
+          <span class="indicator-label">CPU</span>
+        </div>
+        <div class="status-indicator" @click="openJobManagerModal" title="Job Manager">
+          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          <span class="indicator-value">{{ miniStats.jobs }}</span>
+          <span class="indicator-label">Jobs</span>
+        </div>
+        <div class="status-indicator" @click="openMonitoringModal" title="Memory Usage">
+          <iconify-icon icon="material-symbols:memory"></iconify-icon>
+          <span class="indicator-value">{{ miniStats.memory }}%</span>
+          <span class="indicator-label">RAM</span>
+        </div>
+      </div>
+      
+      <div class="control-actions">
+        <button class="btn btn-sm btn-outline" @click="openMonitoringModal">
+          <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+          Monitor
+        </button>
+        <button class="btn btn-sm btn-outline" @click="openJobManagerModal">
+          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          Job Manager
+        </button>
+        <button class="btn btn-sm btn-primary" @click="openBothModals">
+          <iconify-icon icon="material-symbols:dashboard"></iconify-icon>
+          Dashboard
+        </button>
+      </div>
     </div>
-</div>
+
+    <!-- Scraper Overview -->
+    <div class="tab-content active" id="scraper">
+      <div class="tab-header">
+        <h2><iconify-icon icon="iconamoon:cloud-download-light"></iconify-icon> Advanced Code Scraper</h2>
+        <p>Extract code from multiple platforms with intelligent filtering and real-time monitoring</p>
+      </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="quick-actions">
       <button class="btn btn-primary" @click="startQuickScraping">
@@ -21,6 +58,18 @@
         <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
         Load Session
       </button>
+      
+      <!-- Job Control Buttons -->
+      <div class="job-controls">
+        <button class="btn btn-outline" @click="showJobManager = true" title="Manage Jobs">
+          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          Jobs ({{ concurrentJobs.total }})
+        </button>
+        <button class="btn btn-outline" @click="adjustConcurrency" title="Adjust Concurrency">
+          <iconify-icon icon="material-symbols:tune"></iconify-icon>
+          {{ maxConcurrentJobs }} max
+        </button>
+      </div>
     </div>
 
     <!-- Scraping Configuration -->
@@ -722,10 +771,58 @@
         </div>
       </div>
     </div>
+
+    <!-- Teleport Modals to Body -->
+    <Teleport to="body">
+      <!-- Monitoring Modal -->
+      <div v-if="showMonitoringModal" class="modal-overlay">
+        <div class="modal-content xxlarge" @click.stop>
+          <div class="modal-header">
+            <h3><iconify-icon icon="material-symbols:monitor-heart"></iconify-icon> System Monitor</h3>
+            <button class="btn-icon" @click="showMonitoringModal = false">
+              <iconify-icon icon="material-symbols:close"></iconify-icon>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <!-- Monitoring content will be inserted here -->
+            <div class="monitoring-placeholder">
+              <iconify-icon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></iconify-icon>
+              <p>Loading monitoring panel...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Manager Modal -->
+      <div v-if="showJobManager" class="modal-overlay">
+        <div class="modal-content xxlarge" @click.stop>
+          <div class="modal-header">
+            <h3><iconify-icon icon="material-symbols:work-history"></iconify-icon> Job Manager</h3>
+            <button class="btn-icon" @click="showJobManager = false">
+              <iconify-icon icon="material-symbols:close"></iconify-icon>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <!-- Job manager content will be inserted here -->
+            <div class="job-manager-placeholder">
+              <iconify-icon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></iconify-icon>
+              <p>Loading job manager...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script>
+import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { createApp } from 'vue';
+import MonitoringModal from '../components/MonitoringModal.vue';
+import JobManagerModal from '../components/JobManagerModal.vue';
+
 export default {
   name: 'CodeScraper',
   data() {
@@ -806,6 +903,143 @@ export default {
       hasMoreResults: false,
       currentScraperId: null
     }
+  },
+    setup() {
+    // Monitoring state
+    const showMonitoringModal = ref(false);
+    const showJobManager = ref(false);
+    const miniStats = ref({
+      cpu: 0,
+      memory: 0,
+      jobs: 0
+    });
+    
+    const monitoringInterval = ref(null);
+    
+    // Concurrent jobs tracking
+    const concurrentJobs = ref({
+      active: 0,
+      queued: 0,
+      completed: 0,
+      total: 0
+    });
+    
+    const maxConcurrentJobs = ref(5);
+    
+    // Open modals
+    const openMonitoringModal = () => {
+      showMonitoringModal.value = true;
+    };
+    
+    const openJobManagerModal = () => {
+      showJobManager.value = true;
+    };
+    
+    const openBothModals = () => {
+      showMonitoringModal.value = true;
+      showJobManager.value = true;
+    };
+    
+    // Update mini stats
+    const updateMiniStats = async () => {
+      try {
+        if (window.electronAPI && window.electronAPI.getSystemStats) {
+          const response = await window.electronAPI.getSystemStats();
+          if (response.success) {
+            miniStats.value.cpu = Math.round(response.stats.cpu.total);
+            miniStats.value.memory = Math.round(response.stats.memory.percentage);
+            
+            // Get active jobs count
+            if (window.electronAPI.getActiveJobs) {
+              const jobsResponse = await window.electronAPI.getActiveJobs();
+              if (jobsResponse.success) {
+                miniStats.value.jobs = jobsResponse.jobs.length;
+                concurrentJobs.value.active = jobsResponse.jobs.length;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Mini monitoring failed:', error);
+      }
+    };
+    
+    // Start mini monitoring
+    const startMiniMonitoring = () => {
+      updateMiniStats();
+      monitoringInterval.value = setInterval(() => {
+        updateMiniStats();
+      }, 5000);
+    };
+    
+    // Adjust concurrency
+    const adjustConcurrency = async () => {
+      const newMax = prompt('Enter maximum concurrent jobs (1-20):', maxConcurrentJobs.value);
+      if (newMax && !isNaN(newMax)) {
+        const value = parseInt(newMax);
+        if (value >= 1 && value <= 20) {
+          maxConcurrentJobs.value = value;
+          
+          // Update via Electron
+          if (window.electronAPI && window.electronAPI.adjustConcurrency) {
+            await window.electronAPI.adjustConcurrency({
+              maxConcurrentJobs: value,
+              cpuThreshold: 80,
+              ramThreshold: 85
+            });
+          }
+          
+          // Add log
+          // this.addLog('info', `Maximum concurrent jobs set to ${value}`);
+        }
+      }
+    };
+    
+    // Initialize
+    onMounted(() => {
+      startMiniMonitoring();
+      
+      // Listen for job updates from Electron
+      if (window.electronAPI) {
+        window.electronAPI.onJobUpdate((event, data) => {
+          if (data.active !== undefined) {
+            concurrentJobs.value.active = data.active;
+          }
+          if (data.queued !== undefined) {
+            concurrentJobs.value.queued = data.queued;
+          }
+          if (data.completed !== undefined) {
+            concurrentJobs.value.completed = data.completed;
+          }
+          concurrentJobs.value.total = concurrentJobs.value.active + 
+                                      concurrentJobs.value.queued + 
+                                      concurrentJobs.value.completed;
+        });
+      }
+    });
+    
+    onUnmounted(() => {
+      if (monitoringInterval.value) {
+        clearInterval(monitoringInterval.value);
+      }
+    });
+    
+    return {
+      // Monitoring
+      showMonitoringModal,
+      showJobManager,
+      miniStats,
+      concurrentJobs,
+      maxConcurrentJobs,
+      
+      // Methods
+      openMonitoringModal,
+      openJobManagerModal,
+      openBothModals,
+      adjustConcurrency,
+      updateMiniStats,
+      startMiniMonitoring
+    };
   },
   computed: {
     filteredResults() {
@@ -2449,5 +2683,126 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+/* Control Bar */
+.control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.status-indicators {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  min-width: 70px;
+}
+
+.status-indicator:hover {
+  background: var(--bg-secondary);
+  transform: translateY(-2px);
+}
+
+.status-indicator iconify-icon {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.indicator-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.indicator-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.125rem;
+}
+
+.control-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Quick Actions - Update for Job Controls */
+.quick-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.job-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* Modal Improvements */
+.modal-content.xxlarge {
+  max-width: 1000px;
+  max-height: 90vh;
+}
+
+.monitoring-placeholder,
+.job-manager-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.monitoring-placeholder iconify-icon,
+.job-manager-placeholder iconify-icon {
+  margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .control-bar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .status-indicators {
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .control-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .quick-actions {
+    flex-direction: column;
+  }
+  
+  .job-controls {
+    margin-left: 0;
+    justify-content: center;
+  }
 }
 </style>
