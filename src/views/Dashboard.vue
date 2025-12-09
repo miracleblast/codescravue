@@ -278,7 +278,7 @@ export default {
       showHelp: false,
       licenseInfo: {
         type: 'Pro Plan - Active',
-        expiry: 'Expires: December 31, 2025',
+        expiry: 'Expires: ',
         key: 'XXXX-XXXX-XXXX-XXXX',
         plan: 'Pro Plan',
         scrapers: 'All Platforms'
@@ -525,7 +525,6 @@ export default {
 
 <style scoped>
 /* All styles are inherited from the main.css file - no additional styles needed */
-/* The component uses the same CSS classes as your original HTML structure */
 
 .filter-controls {
   display: flex;

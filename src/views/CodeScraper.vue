@@ -1232,7 +1232,27 @@ export default {
         return
       }
       
-      this.isScraping = true
+        this.isScraping = true;
+  
+  // 🎯 LOAD PROXY SETTINGS
+  let proxySettings = {};
+  try {
+    if (window.electronAPI && window.electronAPI.getProxySettings) {
+      const settingsResult = await window.electronAPI.getProxySettings();
+      if (settingsResult.success) {
+        proxySettings = settingsResult.settings;
+      }
+    }
+  } catch (error) {
+    console.log('Could not load proxy settings:', error);
+  }
+  
+  const scrapingData = {
+    ...this.scrapingConfig,
+    scraperId: this.currentScraperId,
+    proxySettings: proxySettings, // Pass proxy settings to scraper
+    stealthMode: 'beast' // Enable BEAST MODE
+  };
       this.progress = {
         current: 0,
         total: this.scrapingConfig.maxResults,

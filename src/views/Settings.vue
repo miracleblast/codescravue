@@ -906,8 +906,8 @@
                   <div class="contact-method">
                     <iconify-icon icon="material-symbols:chat" class="contact-icon"></iconify-icon>
                     <div class="contact-info">
-                      <strong>Jabber/XMPP</strong>
-                      <p>bisi.libre@xmpp.chat</p>
+                      <strong>bísì Forum</strong>
+                      <p>directly on our website in support page</p>
                     </div>
                   </div>
                   
@@ -915,7 +915,7 @@
                     <iconify-icon icon="simple-icons:session" class="contact-icon"></iconify-icon>
                     <div class="contact-info">
                       <strong>Session Messenger</strong> 
-                      <p>Download Session and contact us via our public key</p>
+                      <p>Add our session ID:</p>
                     </div>
                   </div>
                   
@@ -979,7 +979,7 @@
                 <iconify-icon icon="material-symbols:gavel"></iconify-icon>
               </div>
               <div class="legal-info">
-                <p>CodeScraper Pro &copy; 2025. All rights reserved by bisi.</p>
+                <p>CodeScraper Pro &copy; 2025. All rights reserved by bísì.</p>
                 <p>This software is provided as-is without any warranty. Use at your own risk.</p>
                 <p><strong>Privacy Guarantee:</strong> We collect absolutely no data from our users. Your privacy is our priority.</p>
               </div>
@@ -1105,9 +1105,6 @@ export default {
           cacheSize: 200,
           maxMemory: '2048',
           hardwareAcceleration: true,
-          // REMOVED: debugMode: false,
-          // REMOVED: verboseLogging: false,
-          // REMOVED: logLevel: 'info',
           experimentalUI: false,
           aiAssistance: false,
           parallelProcessing: false
@@ -1125,16 +1122,6 @@ export default {
           id: 'light', 
           name: 'Light', 
           previewStyle: 'background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #cbd5e1;' 
-        },
-        { 
-          id: 'blue', 
-          name: 'Blue', 
-          previewStyle: 'background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border: 2px solid #3b82f6;' 
-        },
-        { 
-          id: 'green', 
-          name: 'Green', 
-          previewStyle: 'background: linear-gradient(135deg, #065f46 0%, #047857 100%); border: 2px solid #10b981;' 
         }
       ],
 
@@ -1351,9 +1338,6 @@ export default {
           cacheSize: 200,
           maxMemory: '2048',
           hardwareAcceleration: true,
-          // REMOVED: debugMode: false,
-          // REMOVED: verboseLogging: false,
-          // REMOVED: logLevel: 'info',
           experimentalUI: false,
           aiAssistance: false,
           parallelProcessing: false
@@ -1463,27 +1447,30 @@ export default {
 
     // System information
     async loadSystemInfo() {
-      try {
-        if (window.electronAPI && window.electronAPI.getSystemInfo) {
-          const result = await window.electronAPI.getSystemInfo()
-          if (result.success) {
-            this.systemInfo = result.info
-          }
-        } else {
-          // Sample system info
-          this.systemInfo = {
-            platform: process.platform || 'Unknown',
-            arch: process.arch || 'Unknown',
-            electronVersion: '28.0.0',
-            chromeVersion: '120.0.0.0',
-            nodeVersion: process.version || 'Unknown',
-            v8Version: process.versions?.v8 || 'Unknown'
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load system info:', error)
+  console.log('🔍 Loading system information...');
+  // Get system info from Electron API instead of process
+  if (window.electronAPI && window.electronAPI.getSystemStats) {
+    window.electronAPI.getSystemStats().then(({ success, stats, error }) => {
+      if (success) {
+        this.systemInfo = {
+          platform: process.platform || 'unknown',
+          arch: process.arch || 'unknown',
+          cpu: stats.cpu?.cores || 'Unknown',
+          memory: stats.memory?.total ? `${Math.round(stats.memory.total / (1024 * 1024 * 1024))} GB` : 'Unknown',
+          timestamp: new Date().toLocaleString()
+        };
+      } else {
+        console.error('Failed to load system stats:', error);
+        this.systemInfo = { error: 'Failed to load system information' };
       }
-    },
+    }).catch(err => {
+      console.error('System info error:', err);
+      this.systemInfo = { error: err.message };
+    });
+  } else {
+    this.systemInfo = { error: 'Electron API not available' };
+  }
+},
 
     // About section actions
     async checkForUpdates() {

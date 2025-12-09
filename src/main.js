@@ -7,6 +7,8 @@ import { clickOutside } from './directives/clickOutside'
 console.log('🚀 Vue app starting...')
 
 const app = createApp(App)
+
+// NO compilerOptions here - they're in vite.config.js
 console.log('✅ Vue app created')
 
 app.use(router)

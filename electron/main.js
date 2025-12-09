@@ -1,52 +1,30 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, screen } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { createServer } from 'https';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 🔐 SSL Certificate paths
-const SSL_CERT_PATH = path.join(process.cwd(), 'ssl', 'cert.pem');
-const SSL_KEY_PATH = path.join(process.cwd(), 'ssl', 'key.pem');
-
 // 🔥 IMPORT THE REAL PLAYWRIGHT SCRAPER
 import { EnhancedCodeScraper } from '../src/enhanced-code-scraper.js';
 
 // Security flags
-app.commandLine.appendSwitch('--disable-gpu');
-app.commandLine.appendSwitch('--disable-gpu-compositing');
-app.commandLine.appendSwitch('--disable-gpu-sandbox');
-app.commandLine.appendSwitch('--disable-software-rasterizer');
 app.commandLine.appendSwitch('--no-sandbox');
-app.disableHardwareAcceleration();
-app.commandLine.appendSwitch('--disable-dev-shm-usage');
+app.commandLine.appendSwitch('--disable-gpu');
+app.commandLine.appendSwitch('--ignore-certificate-errors');
+app.commandLine.appendSwitch('--allow-insecure-localhost');
 
 let mainWindow;
-let server;
 let activeScrapers = new Map();
-
-// After creating the window, ensure it's on screen
-const { screen } = require('electron');
-const primaryDisplay = screen.getPrimaryDisplay();
-const { width, height } = primaryDisplay.workAreaSize;
-
-mainWindow.setBounds({
-  x: 0,
-  y: 0, 
-  width: Math.min(1400, width),
-  height: Math.min(900, height)
-});
 
 // 🎯 CONFIGURATION MANAGEMENT
 const CONFIG_PATH = path.join(app.getPath('userData'), 'codescraper-config.json');
 const ACCOUNTS_PATH = path.join(app.getPath('userData'), 'codescraper-accounts.json');
 const SESSIONS_PATH = path.join(app.getPath('userData'), 'codescraper-sessions');
-const RESULTS_PATH = path.join(app.getPath('userData'), 'codescraper-results.json');
 
 function ensureDataDirectory() {
   if (!fsSync.existsSync(SESSIONS_PATH)) {
@@ -114,51 +92,102 @@ async function saveAccounts(accounts) {
   }
 }
 
-// 🎯 RESULTS MANAGEMENT
-async function saveScrapingResults(results) {
-  try {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const resultsPath = path.join(SESSIONS_PATH, `results-${timestamp}.json`);
-    await fs.writeFile(resultsPath, JSON.stringify(results, null, 2));
-    return resultsPath;
-  } catch (error) {
-    console.error('Error saving results:', error);
-    return null;
-  }
-}
-
-async function loadRecentResults() {
-  try {
-    const files = await fs.readdir(SESSIONS_PATH);
-    const resultFiles = files.filter(f => f.startsWith('results-')).sort().reverse();
-    
-    if (resultFiles.length === 0) return [];
-    
-    const latestFile = resultFiles[0];
-    const data = await fs.readFile(path.join(SESSIONS_PATH, latestFile), 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-}
-
 // 🎯 PRODUCTION SCRAPING WITH PLAYWRIGHT
 class ProductionScraper {
   constructor(config) {
     this.config = config;
     this.scraper = null;
     this.isRunning = false;
+    this.currentProxyIndex = 0;
+    this.proxies = config.proxies || [];
+    this.proxyRotation = config.proxyRotation || 'round-robin';
   }
 
   async initialize() {
     if (!this.scraper) {
-      this.scraper = new EnhancedCodeScraper(this.config);
+      // 🎯 GET PROXY CONFIGURATION
+      const proxyConfig = await this.getProxyConfig();
+      
+      // 🚀 CONFIGURE BEAST MODE
+      const beastModeConfig = {
+        ...this.config,
+        proxy: proxyConfig,
+        headless: this.config.headless !== false ? 'new' : false,
+        stealthLevel: this.config.stealthLevel || 'nuclear',
+        humanize: true,
+        requestDelay: this.config.requestDelay || 1000 + Math.random() * 2000,
+        timeout: this.config.timeout || 45000
+      };
+      
+      this.scraper = new EnhancedCodeScraper(beastModeConfig);
       await this.scraper.initialize();
+      
+      console.log('🚀 BEAST MODE initialized with config:', {
+        proxy: proxyConfig ? '✓' : '✗',
+        stealthLevel: beastModeConfig.stealthLevel,
+        requestDelay: beastModeConfig.requestDelay,
+        headless: beastModeConfig.headless
+      });
+    }
+  }
+
+  async getProxyConfig() {
+    if (!this.proxies || this.proxies.length === 0) {
+      return null;
+    }
+
+    // Filter enabled proxies
+    const enabledProxies = this.proxies.filter(p => p.enabled && p.status === 'active');
+    if (enabledProxies.length === 0) {
+      return null;
+    }
+
+    let selectedProxy;
+
+    switch (this.proxyRotation) {
+      case 'random':
+        selectedProxy = enabledProxies[Math.floor(Math.random() * enabledProxies.length)];
+        break;
+      case 'failover':
+        selectedProxy = enabledProxies[0];
+        break;
+      case 'sticky':
+        if (!this.currentProxy) {
+          this.currentProxy = enabledProxies[0];
+        }
+        selectedProxy = this.currentProxy;
+        break;
+      case 'round-robin':
+      default:
+        selectedProxy = enabledProxies[this.currentProxyIndex % enabledProxies.length];
+        this.currentProxyIndex = (this.currentProxyIndex + 1) % enabledProxies.length;
+        break;
+    }
+
+    // Format proxy for Playwright
+    if (selectedProxy.username && selectedProxy.password) {
+      return `${selectedProxy.type}://${selectedProxy.username}:${selectedProxy.password}@${selectedProxy.host}:${selectedProxy.port}`;
+    }
+    
+    return `${selectedProxy.type}://${selectedProxy.host}:${selectedProxy.port}`;
+  }
+
+  async rotateProxy() {
+    if (this.proxies.length > 1) {
+      this.currentProxyIndex = (this.currentProxyIndex + 1) % this.proxies.length;
+      console.log(`🔄 Rotated to proxy ${this.currentProxyIndex + 1}/${this.proxies.length}`);
+      
+      // Reinitialize with new proxy
+      if (this.scraper) {
+        await this.scraper.close();
+        this.scraper = null;
+      }
+      await this.initialize();
     }
   }
 
   async scrapeGitHub(query, options) {
-    console.log('🔍 PRODUCTION: Scraping GitHub with query:', query);
+    console.log('🐉 BEAST MODE: Scraping GitHub...');
     await this.initialize();
     
     try {
@@ -167,6 +196,14 @@ class ProductionScraper {
       return results;
     } catch (error) {
       console.error('❌ GitHub scraping failed:', error);
+      
+      // 🔄 AUTO-RETRY WITH PROXY ROTATION
+      if (this.config.autoRetry) {
+        console.log('🔄 Auto-retry with proxy rotation...');
+        await this.rotateProxy();
+        return await this.scraper.scrapeGitHub(query, options);
+      }
+      
       throw error;
     }
   }
@@ -227,9 +264,49 @@ class ProductionScraper {
     }
   }
 
-  async scrapeWithRetry(platform, query, options, maxRetries = 3) {
+ async scrapeWithRetry(platform, query, options, maxRetries = 3) {
     await this.initialize();
-    return await this.scraper.scrapeWithRetry(platform, query, options, maxRetries);
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempt ${attempt}/${maxRetries} for ${platform}`);
+        
+        let results;
+        switch (platform) {
+          case 'github':
+            results = await this.scrapeGitHub(query, options);
+            break;
+          case 'gitlab':
+            results = await this.scraper.scrapeGitLab(query, options);
+            break;
+          case 'bitbucket':
+            results = await this.scraper.scrapeBitbucket(query, options);
+            break;
+          case 'codepen':
+            results = await this.scraper.scrapeCodePen(query, options);
+            break;
+          case 'stackoverflow':
+            results = await this.scraper.scrapeStackOverflow(query, options);
+            break;
+          default:
+            throw new Error(`Unsupported platform: ${platform}`);
+        }
+        
+        console.log(`✅ Success on attempt ${attempt}: ${results.length} results`);
+        return results;
+        
+      } catch (error) {
+        console.error(`❌ Attempt ${attempt} failed:`, error.message);
+        
+        if (attempt < maxRetries) {
+          // 🌀 ROTATE PROXY & FINGERPRINT
+          await this.rotateProxy();
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        } else {
+          throw new Error(`All ${maxRetries} attempts failed: ${error.message}`);
+        }
+      }
+    }
   }
 
   async close() {
@@ -241,183 +318,213 @@ class ProductionScraper {
   }
 }
 
-// 🚀 IMPROVED HTTPS SERVER
-function createHttpsServer() {
-  return new Promise((resolve, reject) => {
-    if (!fsSync.existsSync(SSL_CERT_PATH) || !fsSync.existsSync(SSL_KEY_PATH)) {
-      // Updated error message
-      reject(new Error('SSL certificates not found. Run: mkcert -key-file ssl/key.pem -cert-file ssl/cert.pem localhost 127.0.0.1 ::1'));
-      return;
-    }
-
-    const options = {
-      key: fsSync.readFileSync(SSL_KEY_PATH),
-      cert: fsSync.readFileSync(SSL_CERT_PATH)
-    };
-
-    const server = createServer(options, (req, res) => {
-      // Set CORS headers for all responses
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
-      // Handle preflight requests
-      if (req.method === 'OPTIONS') {
-        res.writeHead(200);
-        res.end();
-        return;
-      }
-      
-      let filePath = req.url === '/' ? '/index.html' : req.url;
-      
-      // Remove any query parameters
-      filePath = filePath.split('?')[0];
-      
-      // Security: Prevent directory traversal
-      const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-      let fullPath = path.join(process.cwd(), 'dist', safePath);
-      
-      // Check if file exists
-      fsSync.access(fullPath, fsSync.constants.F_OK, (err) => {
-        if (err) {
-          // File not found, serve index.html for SPA routing
-          const indexPath = path.join(process.cwd(), 'dist', 'index.html');
-          fsSync.readFile(indexPath, (err, data) => {
-            if (err) {
-              res.writeHead(404, { 'Content-Type': 'text/plain' });
-              res.end('File not found');
-            } else {
-              res.setHeader('Content-Type', 'text/html');
-              res.writeHead(200);
-              res.end(data);
-            }
-          });
-          return;
-        }
-        
-        // File exists, serve it
-        fsSync.readFile(fullPath, (err, data) => {
-          if (err) {
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
-            res.end('Server error');
-            return;
-          }
-          
-          // Set appropriate content type
-          const ext = path.extname(fullPath).toLowerCase();
-          const contentTypes = {
-            '.html': 'text/html; charset=utf-8',
-            '.css': 'text/css; charset=utf-8',
-            '.js': 'application/javascript; charset=utf-8',
-            '.json': 'application/json; charset=utf-8',
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.svg': 'image/svg+xml',
-            '.ico': 'image/x-icon',
-            '.woff': 'font/woff',
-            '.woff2': 'font/woff2',
-            '.ttf': 'font/ttf',
-            '.eot': 'application/vnd.ms-fontobject'
-          };
-          
-          res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
-          res.writeHead(200);
-          res.end(data);
-        });
-      });
-    });
-    
-    server.listen(3001, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('🔐 HTTPS server running on https://localhost:3001');
-        console.log('📁 Serving files from:', path.join(process.cwd(), 'dist'));
-        resolve(server);
-      }
-    });
-  });
-}
-
+// 🚀 SIMPLIFIED WINDOW CREATION THAT WILL DEFINITELY WORK
 function createWindow() {
   console.log('🚀 Creating main window...');
   
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  
+  const winWidth = Math.min(1400, width);
+  const winHeight = Math.min(900, height);
+  const x = Math.max(0, Math.floor((width - winWidth) / 2));
+  const y = Math.max(0, Math.floor((height - winHeight) / 2));
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: winWidth,
+    height: winHeight,
+    x: x,
+    y: y,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      webSecurity: true, // ✅ Keep enabled for HTTPS
-      preload: path.join(__dirname, 'preload.js')
+      webSecurity: false, // Keep this true for security
+      preload: path.join(__dirname, 'preload.js'),
+      // Allow loading external resources
+      webviewTag: false,
+      safeDialogs: true
     },
     title: 'CodeScraper Pro - Solar Projects Chad 🇹🇩',
-    icon: path.join(__dirname, 'assets/icon.png'),
-    show: false,
+    show: true,
+    frame: true,
     center: true,
-    useContentSize: true,
-    autoHideMenuBar: true
+    autoHideMenuBar: false,
+    backgroundColor: '#1a1a1a',
+    icon: path.join(process.cwd(), 'public', 'assets', 'icon.png'),
+    skipTaskbar: false,
+    alwaysOnTop: false,
+    fullscreenable: true,
+    resizable: true,
+    maximizable: true
   });
 
-  // After creating the window, ensure it's on screen
-const { screen } = require('electron');
-const primaryDisplay = screen.getPrimaryDisplay();
-const { width, height } = primaryDisplay.workAreaSize;
+   // Allow ALL external resources for development
+  mainWindow.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
+    callback({ requestHeaders: details.requestHeaders });
+  });
 
-mainWindow.setBounds({
-  x: 0,
-  y: 0, 
-  width: Math.min(1400, width),
-  height: Math.min(900, height)
-});
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = {
+      ...details.responseHeaders,
+      'Access-Control-Allow-Origin': ['*'],
+      'Access-Control-Allow-Credentials': ['true']
+    };
+    callback({ responseHeaders });
+  });
+
+    // Disable SSL verification
+  mainWindow.webContents.session.setCertificateVerifyProc(() => {
+    console.log('🔓 Trusting all certificates for development');
+    return 0; // Trust everything
+  });
+
+  const viteDevServer = 'https://localhost:3000';
+  console.log(`📡 Loading from: ${viteDevServer}`);
   
-  // ✅ Load from HTTPS server
-  mainWindow.loadURL('https://localhost:3001');
+  mainWindow.loadURL(viteDevServer).then(() => {
+    console.log('✅ Load successful');
+  }).catch(err => {
+    console.error('❌ Load failed:', err.message);
+    showErrorPage(err);
+  });
 
-  // 🔧 Simple certificate verification - allow all trusted certificates
-mainWindow.webContents.session.setCertificateVerifyProc((request, callback) => {
-  // Since we're using mkcert trusted certificates, just allow verification to proceed normally
-  callback(-3); // Use default certificate verification
-});
-
-  mainWindow.once('ready-to-show', () => {
-    console.log('✅ Window ready-to-show');
+  // Open DevTools
+  mainWindow.webContents.openDevTools();
+  
+  // Event listeners for debugging
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('✅ Page finished loading');
     mainWindow.show();
     mainWindow.focus();
   });
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('❌ Failed to load:', errorDescription);
+    console.error('❌ Page failed to load:', { errorCode, errorDescription });
+    showErrorPage(new Error(`${errorDescription} (code: ${errorCode})`));
   });
 
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('✅ Page finished loading');
+  mainWindow.on('show', () => {
+    console.log('🎉 Window.show() event fired - window is visible!');
   });
+
+  mainWindow.on('focus', () => {
+    console.log('🎯 Window.focus() event fired - window has focus!');
+  });
+
+  // Window state logging
+  setInterval(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log('📊 Window state:', {
+        visible: mainWindow.isVisible(),
+        focused: mainWindow.isFocused(),
+        minimized: mainWindow.isMinimized(),
+        destroyed: mainWindow.isDestroyed()
+      });
+    }
+  }, 5000); // Log every 5 seconds
+}
+
+// Show error page if loading fails
+function showErrorPage(error) {
+  const errorHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>CodeScraper Pro - Connection Error</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .error-container {
+            background: rgba(0,0,0,0.8);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+            text-align: center;
+          }
+          h1 { color: #ff6b6b; margin-top: 0; }
+          code { 
+            background: #333; 
+            padding: 10px; 
+            border-radius: 5px;
+            display: block;
+            margin: 15px 0;
+            text-align: left;
+            font-family: monospace;
+          }
+          button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+          }
+          button:hover { background: #45a049; }
+        </style>
+      </head>
+      <body>
+        <div class="error-container">
+          <h1>⚠️ Connection Error</h1>
+          <p>Could not connect to Vite development server.</p>
+          <code>Error: ${error.message}</code>
+          <p><strong>To fix this:</strong></p>
+          <ol style="text-align: left; margin: 20px 0;">
+            <li>Open a new terminal</li>
+            <li>Run: <code>npm run dev</code></li>
+            <li>Wait for Vite to start (should say "ready in X ms")</li>
+            <li>Click the Retry button below</li>
+          </ol>
+          <div>
+            <button onclick="window.location.reload()">🔄 Retry Connection</button>
+            <button onclick="require('electron').ipcRenderer.send('open-devtools')">🔧 Open DevTools</button>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+  
+  mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
 }
 
 // 🎯 APP INITIALIZATION
 app.whenReady().then(async () => {
   console.log('🚀 Electron app is ready!');
+  console.log('📁 App data directory:', app.getPath('userData'));
   ensureDataDirectory();
   
-  // Start HTTPS server first, then create window
-  try {
-    await createHttpsServer();
-    createWindow();
-  } catch (error) {
-    console.error('❌ Failed to start HTTPS server:', error);
-    app.quit();
-  }
+  createWindow();
+  
+  // Double-check window is visible after a moment
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log('🔍 Final window check:');
+      console.log('   Is visible?', mainWindow.isVisible());
+      console.log('   Is focused?', mainWindow.isFocused());
+      console.log('   Is minimized?', mainWindow.isMinimized());
+      
+      if (!mainWindow.isVisible()) {
+        console.log('⚠️ Window not visible - forcing show()');
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  }, 2000);
 });
 
 app.on('window-all-closed', () => {
   console.log('❌ All windows closed');
-  if (server) {
-    server.close();
-  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -428,6 +535,431 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+// IPC handler for error page
+ipcMain.on('open-devtools', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.openDevTools();
+  }
+});
+
+// 🔌 PROXY MANAGEMENT HANDLERS
+const PROXIES_PATH = path.join(app.getPath('userData'), 'codescraper-proxies.json');
+const PROXY_SETTINGS_PATH = path.join(app.getPath('userData'), 'codescraper-proxy-settings.json');
+
+// Load proxies from storage
+async function loadProxies() {
+  try {
+    await fs.access(PROXIES_PATH);
+    const data = await fs.readFile(PROXIES_PATH, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return []; // Return empty array if file doesn't exist
+  }
+}
+
+// Save proxies to storage
+async function saveProxies(proxies) {
+  try {
+    await fs.writeFile(PROXIES_PATH, JSON.stringify(proxies, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving proxies:', error);
+    return false;
+  }
+}
+
+// Load proxy settings
+async function loadProxySettings() {
+  try {
+    await fs.access(PROXY_SETTINGS_PATH);
+    const data = await fs.readFile(PROXY_SETTINGS_PATH, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return {
+      rotationMode: 'round-robin',
+      requestsPerProxy: 100,
+      rotationDelay: 0,
+      autoRetryFailed: true,
+      rotateOnBan: true,
+      testUrl: 'https://httpbin.org/ip',
+      testTimeout: 5000
+    };
+  }
+}
+
+// IPC HANDLERS
+ipcMain.handle('get-proxies', async () => {
+  try {
+    const proxies = await loadProxies();
+    return { success: true, proxies };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-proxy', async (event, proxyData) => {
+  try {
+    const proxies = await loadProxies();
+    
+    if (proxyData.id) {
+      // Update existing proxy
+      const index = proxies.findIndex(p => p.id === proxyData.id);
+      if (index !== -1) {
+        proxies[index] = { ...proxies[index], ...proxyData };
+      } else {
+        proxies.push({ ...proxyData, id: Date.now().toString() });
+      }
+    } else {
+      // Add new proxy
+      proxies.push({
+        id: Date.now().toString(),
+        ...proxyData,
+        status: 'testing',
+        responseTime: null,
+        successRate: 0,
+        lastTested: null,
+        enabled: true
+      });
+    }
+    
+    await saveProxies(proxies);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('delete-proxy', async (event, proxyId) => {
+  try {
+    let proxies = await loadProxies();
+    proxies = proxies.filter(p => p.id !== proxyId);
+    await saveProxies(proxies);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-proxy-settings', async () => {
+  try {
+    const settings = await loadProxySettings();
+    return { success: true, settings };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-proxy-settings', async (event, settings) => {
+  try {
+    await fs.writeFile(PROXY_SETTINGS_PATH, JSON.stringify(settings, null, 2));
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('test-proxy', async (event, proxyConfig) => {
+  try {
+    console.log('🧪 Testing proxy:', proxyConfig.host);
+    
+    const axios = await import('axios');
+    const startTime = Date.now();
+    
+    const response = await axios.default.get('https://httpbin.org/ip', {
+      proxy: {
+        protocol: proxyConfig.type || 'http',
+        host: proxyConfig.host,
+        port: parseInt(proxyConfig.port),
+        ...(proxyConfig.username && proxyConfig.password ? {
+          auth: {
+            username: proxyConfig.username,
+            password: proxyConfig.password
+          }
+        } : {})
+      },
+      timeout: 10000
+    });
+    
+    const responseTime = Date.now() - startTime;
+    
+    return {
+      success: true,
+      working: true,
+      responseTime: responseTime,
+      ip: response.data.origin,
+      location: 'Unknown' // Could add IP geolocation here
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      working: false,
+      error: error.message
+    };
+  }
+});
+
+ipcMain.handle('test-all-proxies', async () => {
+  try {
+    const proxies = await loadProxies();
+    const results = [];
+    
+    for (const proxy of proxies.filter(p => p.enabled)) {
+      const result = await ipcMain.handle('test-proxy', null, proxy);
+      results.push({
+        id: proxy.id,
+        ...result
+      });
+      
+      // Update proxy status
+      const index = proxies.findIndex(p => p.id === proxy.id);
+      if (index !== -1) {
+        proxies[index].status = result.working ? 'active' : 'failed';
+        proxies[index].responseTime = result.working ? result.responseTime : null;
+        proxies[index].lastTested = new Date().toISOString();
+      }
+      
+      // Small delay between tests
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Save updated proxies
+    await saveProxies(proxies);
+    
+    return {
+      success: true,
+      results,
+      summary: {
+        total: proxies.length,
+        working: results.filter(r => r.working).length,
+        failed: results.filter(r => !r.working).length
+      }
+    };
+    
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+async function saveScrapingResults(results) {
+  try {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `scraping-results-${timestamp}.json`;
+    const filepath = path.join(app.getPath('downloads'), filename);
+    
+    await fs.writeFile(filepath, JSON.stringify(results, null, 2));
+    return filepath;
+  } catch (error) {
+    console.error('Failed to save results:', error);
+    return null;
+  }
+}
+
+// Add this to your existing start-scraping handler:
+// In the start-scraping handler, add proxy loading:
+ipcMain.handle('start-scraping', async (event, scrapingConfig) => {
+  const scraperId = Date.now().toString();
+  
+  try {
+    const userConfig = await loadConfig();
+    
+    // 🎯 LOAD PROXIES FOR SCRAPING
+    let proxies = [];
+    let proxySettings = {};
+    
+    try {
+      proxies = await loadProxies();
+      proxySettings = await loadProxySettings();
+    } catch (error) {
+      console.log('No proxies configured, proceeding without proxy');
+    }
+    
+    // Filter active proxies
+    const activeProxies = proxies.filter(p => p.enabled && p.status === 'active');
+    
+    const fullConfig = {
+      ...userConfig.scraping,
+      ...scrapingConfig,
+      proxies: activeProxies, // Pass active proxies
+      proxyRotation: proxySettings.rotationMode || 'round-robin',
+      stealthLevel: 'nuclear', // Enable BEAST MODE
+      autoRetry: true
+    };
+    
+    const scraper = new ProductionScraper(fullConfig);
+    activeScrapers.set(scraperId, scraper);
+
+    console.log('🚀 BEAST MODE: Starting scraping with config:', {
+      platform: scrapingConfig.platform,
+      query: scrapingConfig.query,
+      maxResults: scrapingConfig.maxResults,
+      proxyCount: activeProxies.length,
+      stealthLevel: 'nuclear'
+    });
+
+    let results = [];
+    
+    // REAL SCRAPING with Playwright
+    switch (scrapingConfig.platform) {
+      case 'github':
+        results = await scraper.scrapeWithRetry('github', scrapingConfig.query, scrapingConfig);
+        break;
+      case 'gitlab':
+        results = await scraper.scrapeWithRetry('gitlab', scrapingConfig.query, scrapingConfig);
+        break;
+      case 'bitbucket':
+        results = await scraper.scrapeWithRetry('bitbucket', scrapingConfig.query, scrapingConfig);
+        break;
+      case 'codepen':
+        results = await scraper.scrapeWithRetry('codepen', scrapingConfig.query, scrapingConfig);
+        break;
+      case 'stackoverflow':
+        results = await scraper.scrapeWithRetry('stackoverflow', scrapingConfig.query, scrapingConfig);
+        break;
+      case 'multiple':
+        // Multi-platform scraping
+        for (const platform of scrapingConfig.selectedPlatforms || []) {
+          if (platform !== 'multiple') {
+            const platformResults = await scraper.scrapeWithRetry(
+              platform, 
+              scrapingConfig.query, 
+              scrapingConfig
+            );
+            results.push(...platformResults);
+          }
+        }
+        break;
+      default:
+        throw new Error(`Unsupported platform: ${scrapingConfig.platform}`);
+    }
+
+    // Save results to file
+    const savedPath = await saveScrapingResults(results);
+    console.log(`💾 Results saved to: ${savedPath}`);
+
+    await scraper.close();
+    activeScrapers.delete(scraperId);
+
+    // Send progress update
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('scraping-progress', {
+        scraperId,
+        progress: 100,
+        status: 'completed',
+        resultsCount: results.length
+      });
+    }
+
+    return { 
+      success: true, 
+      data: results,
+      scraperId: scraperId,
+      savedPath: savedPath
+    };
+    
+  } catch (error) {
+    console.error('❌ Scraping failed:', error);
+    
+    if (activeScrapers.has(scraperId)) {
+      await activeScrapers.get(scraperId).close();
+      activeScrapers.delete(scraperId);
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('scraping-error', {
+        scraperId,
+        error: error.message
+      });
+    }
+    
+    return { 
+      success: false, 
+      error: error.message,
+      scraperId: scraperId
+    };
+  }
+});
+
+// Keep the cancel-scraping handler (it's fine to keep this one)
+ipcMain.handle('cancel-scraping', async (event, scraperId) => {
+  try {
+    if (activeScrapers.has(scraperId)) {
+      await activeScrapers.get(scraperId).close();
+      activeScrapers.delete(scraperId);
+      
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('scraping-progress', {
+          scraperId,
+          progress: 0,
+          status: 'cancelled'
+        });
+      }
+      
+      return { success: true };
+    }
+    return { success: false, error: 'Scraper not found' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// 🎯 DASHBOARD HANDLERS
+ipcMain.handle('get-dashboard-stats', async () => {
+  try {
+    const [config, accounts, recentResults] = await Promise.all([
+      loadConfig(),
+      loadAccounts(),
+      loadRecentResults()
+    ]);
+    
+    return {
+      success: true,
+      stats: {
+        config: config,
+        accountsCount: accounts.length,
+        recentResultsCount: recentResults.length,
+        activeScrapers: activeScrapers.size,
+        storagePath: app.getPath('userData'),
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// 🎯 STORAGE INFO HANDLER
+ipcMain.handle('get-storage-info', async () => {
+  try {
+    const userDataPath = app.getPath('userData');
+    const config = await loadConfig();
+    const accounts = await loadAccounts();
+    const recentResults = await loadRecentResults();
+    
+    return {
+      success: true,
+      info: {
+        userDataPath,
+        configExists: fsSync.existsSync(CONFIG_PATH),
+        accountsExists: fsSync.existsSync(ACCOUNTS_PATH),
+        accountsCount: accounts.length,
+        recentResultsCount: recentResults.length,
+        sessionsPath: SESSIONS_PATH,
+        sessionsExists: fsSync.existsSync(SESSIONS_PATH),
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// 🎯 JOB UPDATE EVENTS
+ipcMain.handle('on-job-update', async (event, callback) => {
+  // This is handled by the preload script event system
+  return { success: true };
 });
 
 // 🎯 IPC HANDLERS - PRODUCTION READY WITH PLAYWRIGHT
@@ -568,127 +1100,6 @@ async function testGitLabAccount(account) {
 async function testBitbucketAccount(account) {
   return { success: true, message: 'Bitbucket account verification passed' };
 }
-
-// 🚀 REAL SCRAPING HANDLERS WITH PLAYWRIGHT
-ipcMain.handle('start-scraping', async (event, scrapingConfig) => {
-  const scraperId = Date.now().toString();
-  
-  try {
-    const userConfig = await loadConfig();
-    
-    const fullConfig = {
-      ...userConfig.scraping,
-      ...scrapingConfig
-    };
-
-    const scraper = new ProductionScraper(fullConfig);
-    activeScrapers.set(scraperId, scraper);
-
-    console.log('🚀 PRODUCTION: Starting REAL scraping with config:', {
-      platform: scrapingConfig.platform,
-      query: scrapingConfig.query,
-      maxResults: scrapingConfig.maxResults,
-      fileTypes: scrapingConfig.fileTypes
-    });
-
-    let results = [];
-    
-    // REAL SCRAPING with Playwright
-    switch (scrapingConfig.platform) {
-      case 'github':
-        results = await scraper.scrapeGitHub(scrapingConfig.query, scrapingConfig);
-        break;
-      case 'gitlab':
-        results = await scraper.scrapeGitLab(scrapingConfig.query, scrapingConfig);
-        break;
-      case 'bitbucket':
-        results = await scraper.scrapeBitbucket(scrapingConfig.query, scrapingConfig);
-        break;
-      case 'codepen':
-        results = await scraper.scrapeCodePen(scrapingConfig.query, scrapingConfig);
-        break;
-      case 'stackoverflow':
-        results = await scraper.scrapeStackOverflow(scrapingConfig.query, scrapingConfig);
-        break;
-      case 'multiple':
-        // Multi-platform scraping
-        for (const platform of scrapingConfig.selectedPlatforms || []) {
-          if (platform !== 'multiple') {
-            const platformResults = await scraper.scrapeWithRetry(
-              platform, 
-              scrapingConfig.query, 
-              scrapingConfig
-            );
-            results.push(...platformResults);
-          }
-        }
-        break;
-      default:
-        throw new Error(`Unsupported platform: ${scrapingConfig.platform}`);
-    }
-
-    // Save results to file
-    const savedPath = await saveScrapingResults(results);
-    console.log(`💾 Results saved to: ${savedPath}`);
-
-    await scraper.close();
-    activeScrapers.delete(scraperId);
-
-    // Send progress update
-    mainWindow.webContents.send('scraping-progress', {
-      scraperId,
-      progress: 100,
-      status: 'completed',
-      resultsCount: results.length
-    });
-
-    return { 
-      success: true, 
-      data: results,
-      scraperId: scraperId,
-      savedPath: savedPath
-    };
-    
-  } catch (error) {
-    console.error('❌ Scraping failed:', error);
-    
-    if (activeScrapers.has(scraperId)) {
-      await activeScrapers.get(scraperId).close();
-      activeScrapers.delete(scraperId);
-    }
-
-    mainWindow.webContents.send('scraping-error', {
-      scraperId,
-      error: error.message
-    });
-    
-    return { 
-      success: false, 
-      error: error.message,
-      scraperId: scraperId
-    };
-  }
-});
-
-ipcMain.handle('cancel-scraping', async (event, scraperId) => {
-  try {
-    if (activeScrapers.has(scraperId)) {
-      await activeScrapers.get(scraperId).close();
-      activeScrapers.delete(scraperId);
-      
-      mainWindow.webContents.send('scraping-progress', {
-        scraperId,
-        progress: 0,
-        status: 'cancelled'
-      });
-      
-      return { success: true };
-    }
-    return { success: false, error: 'Scraper not found' };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
 
 // 🖥️ SYSTEM MONITORING HANDLERS - REAL DATA
 ipcMain.handle('get-system-stats', async () => {

@@ -4,18 +4,20 @@
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "electron": "electron electron/main.js",
-    "electron-dev": "npm run build && npm run electron",
-    "start": "npm run build && npm run electron -- --disable-gpu --no-sandbox",
-    "dist": "npm run build && electron-builder",
-    "dist:all": "npm run build && electron-builder -l -w -m",
-    "dist:linux": "npm run build && electron-builder --linux",
-    "dist:win": "npm run build && electron-builder --win",
-    "dist:mac": "npm run build && electron-builder --mac"
-  },
+  "dev": "vite --host", 
+  "build": "vite build",
+  "preview": "vite preview",
+  "electron": "electron . --no-sandbox --disable-features=VizDisplayCompositor --ignore-certificate-errors --allow-insecure-localhost",
+  "dev:electron": "electron . --no-sandbox --disable-features=VizDisplayCompositor --ignore-certificate-errors --allow-insecure-localhost",
+  "dev:full": "concurrently -k \"npm run dev\" \"wait-on https://localhost:3000 && npm run dev:electron\"",
+  "start": "npm run dev:full",
+  "build:run": "npm run build && npm run electron",
+  "dist": "npm run build && electron-builder",
+  "dist:all": "npm run build && electron-builder -l -w -m",
+  "dist:linux": "npm run build && electron-builder --linux",
+  "dist:win": "npm run build && electron-builder --win",
+  "dist:mac": "npm run build && electron-builder --mac"
+},
   "build": {
     "appId": "com.bisi.codescraper-pro",
     "productName": "CodeScraper Pro",
@@ -52,7 +54,7 @@
         "zip"
       ],
       "category": "public.app-category.developer-tools",
-      "icon": "assets/icon.icns"
+      "icon": "public/assets/icon.png"
     },
     "nsis": {
       "oneClick": false,
@@ -61,8 +63,11 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
     "electron": "^39.2.4",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "wait-on": "^8.0.5"
   },
   "dependencies": {
     "axios": "^1.13.2",

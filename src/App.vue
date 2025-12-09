@@ -5,7 +5,7 @@
       <div class="sidebar-header">
         <div class="logo">
           <iconify-icon icon="material-symbols:code" class="logo-icon"></iconify-icon>
-          <h2>CodeScraper Pro by bisi.</h2>
+          <h2>CodeScraper Pro by bísì.</h2>
         </div>
       </div>
       

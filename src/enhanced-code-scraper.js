@@ -1,600 +1,771 @@
-// enhanced-code-scraper.js
+// enhanced-code-scraper.js - BEAST MODE EDITION
 import { chromium } from 'playwright';
-import fs from 'fs';
-import path from 'path';
+import crypto from 'crypto';
 
 export class EnhancedCodeScraper {
     constructor(config = {}) {
         this.config = {
-            headless: true,
-            timeout: 30000,
-            viewport: { width: 1280, height: 720 },
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            // 🚀 BEAST MODE SETTINGS
+            headless: config.headless || 'new',
+            stealthLevel: config.stealthLevel || 'nuclear',
+            fingerprintSpoofing: true,
+            humanize: true,
+            requestDelay: config.requestDelay || 1000,
+            timeout: config.timeout || 30000,
+            maxRetries: config.maxRetries || 3,
+            
+            // 🔌 PROXY SUPPORT
+            proxy: config.proxy || null,
+            proxyRotation: config.proxyRotation || 'round-robin',
+            
+            // 🛡️ BLOCKING
+            blockTrackers: true,
+            blockAds: true,
+            
             ...config
         };
         
         this.browser = null;
         this.context = null;
-        this.page = null;
-        this.isInitialized = false;
-        this.activeScrapers = new Map();
-        this.stats = {
-            totalRequests: 0,
-            successfulScrapes: 0,
-            failedScrapes: 0,
-            totalResults: 0,
-            platforms: {}
-        };
+        this.pages = new Map();
+        this.retryCount = 0;
+        this.blockedCount = 0;
+        this.results = [];
+        
+        // 🎯 FINGERPRINT DATABASE
+        this.fingerprintDB = this.generateFingerprintDB();
     }
 
+    // 🔥 INITIALIZE WITH NUCLEAR STEALTH
     async initialize() {
-        if (this.isInitialized) return;
+        console.log('🚀 Initializing BEAST MODE scraper...');
+        
+        if (this.browser) {
+            return; // Already initialized
+        }
+        
+        const fingerprint = this.generateNuclearFingerprint();
+        
+        // 🎭 ULTIMATE BROWSER ARGS
+        const args = [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            `--window-size=${fingerprint.screen.width},${fingerprint.screen.height}`,
+            `--user-agent=${fingerprint.userAgent}`,
+            `--lang=${fingerprint.locale}`,
+            '--ignore-certificate-errors',
+            '--ignore-ssl-errors'
+        ];
+
+        // Add proxy if available
+        if (this.config.proxy) {
+            args.push(`--proxy-server=${this.config.proxy}`);
+            console.log(`🔌 Using proxy: ${this.config.proxy}`);
+        }
+
+        // 🚀 LAUNCH BROWSER
+        const launchOptions = {
+            headless: this.config.headless,
+            args: args,
+            ignoreDefaultArgs: ['--enable-automation'],
+            timeout: 60000,
+            ignoreHTTPSErrors: true
+        };
 
         try {
-            console.log('🚀 Initializing Enhanced Code Scraper...');
+            this.browser = await chromium.launch(launchOptions);
             
-            this.browser = await chromium.launch({
-                headless: this.config.headless,
-                timeout: this.config.timeout
-            });
-
+            // 🎭 CREATE CONTEXT WITH STEALTH
             this.context = await this.browser.newContext({
-                viewport: this.config.viewport,
-                userAgent: this.config.userAgent,
+                viewport: {
+                    width: fingerprint.screen.width,
+                    height: fingerprint.screen.height
+                },
+                userAgent: fingerprint.userAgent,
+                locale: fingerprint.locale,
+                timezoneId: fingerprint.timezone,
+                geolocation: fingerprint.geolocation,
+                permissions: ['geolocation'],
                 ignoreHTTPSErrors: true,
+                bypassCSP: true,
                 javaScriptEnabled: true
             });
 
-            // Set up request interception for better performance
-            await this.context.route('**/*', (route) => {
-                const resourceType = route.request().resourceType();
-                // Block images, fonts, and media for faster scraping
-                if (['image', 'font', 'media'].includes(resourceType)) {
-                    route.abort();
-                } else {
-                    route.continue();
-                }
-            });
-
-            this.page = await this.context.newPage();
+            // 🔥 INJECT STEALTH SCRIPT
+            await this.context.addInitScript(this.getStealthScript(fingerprint));
             
-            // Set default timeouts
-            this.page.setDefaultTimeout(this.config.timeout);
-            this.page.setDefaultNavigationTimeout(this.config.timeout * 2);
+            // 🛡️ SETUP ADVANCED ROUTING
+            await this.setupAdvancedRouting();
 
-            this.isInitialized = true;
-            console.log('✅ Enhanced Code Scraper initialized successfully');
+            console.log('✅ BEAST MODE scraper initialized');
+            return true;
             
         } catch (error) {
-            console.error('❌ Failed to initialize Enhanced Code Scraper:', error);
+            console.error('❌ Failed to initialize scraper:', error);
             throw error;
         }
     }
 
-    // 🎯 GITHUB SCRAPER (Enhanced)
-    async scrapeGitHub(query, options = {}) {
-        const {
-            maxResults = 50,
-            language = '',
-            includeForks = false,
-            includeArchived = false,
-            minStars = 0,
-            minForks = 0,
-            updatedAfter = '',
-            fileTypes = ['.js', '.py', '.java']
-        } = options;
-
-        console.log(`🔍 Searching GitHub for: "${query}"`);
-
-        try {
-            const searchUrl = this.buildGitHubSearchUrl(query, {
-                language,
-                includeForks,
-                includeArchived,
-                minStars,
-                minForks,
-                updatedAfter
-            });
-
-            await this.page.goto(searchUrl, { waitUntil: 'networkidle' });
-            
-            // Wait for results to load
-            await this.page.waitForSelector('[data-testid="results-list"] .Box-row', { timeout: 10000 });
-
-            const results = [];
-            let hasNextPage = true;
-            let pageCount = 0;
-
-            while (results.length < maxResults && hasNextPage && pageCount < 10) {
-                const pageResults = await this.extractGitHubResults();
-                results.push(...pageResults);
-
-                // Check for next page
-                hasNextPage = await this.hasNextGitHubPage();
-                if (hasNextPage && results.length < maxResults) {
-                    await this.goToNextGitHubPage();
-                    pageCount++;
-                    await this.randomDelay(1000, 3000);
-                }
+    // 🎭 GENERATE NUCLEAR FINGERPRINT
+    generateNuclearFingerprint() {
+        const fingerprints = [
+            {
+                id: crypto.randomUUID(),
+                platform: 'Win32',
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                screen: { width: 1920, height: 1080 },
+                language: 'en-US',
+                locale: 'en-US',
+                timezone: 'America/New_York',
+                geolocation: { latitude: 40.7128, longitude: -74.0060 }
+            },
+            {
+                id: crypto.randomUUID(),
+                platform: 'MacIntel',
+                userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                screen: { width: 1440, height: 900 },
+                language: 'en-US',
+                locale: 'en-US',
+                timezone: 'America/Los_Angeles',
+                geolocation: { latitude: 34.0522, longitude: -118.2437 }
             }
+        ];
+        
+        return fingerprints[Math.floor(Math.random() * fingerprints.length)];
+    }
 
-            // Enrich results with detailed information
-            const enrichedResults = await this.enrichGitHubResults(results.slice(0, maxResults), fileTypes);
+    // 🛡️ STEALTH SCRIPT
+    getStealthScript(fingerprint) {
+        return `
+            // 🚫 REMOVE AUTOMATION TRACES
+            Object.defineProperty(navigator, 'webdriver', { get: () => false });
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
             
-            this.stats.totalResults += enrichedResults.length;
-            this.stats.platforms.github = (this.stats.platforms.github || 0) + enrichedResults.length;
-            this.stats.successfulScrapes++;
+            // 🎭 OVERWRITE LANGUAGES
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['${fingerprint.language}', 'en']
+            });
+            
+            // 🎭 OVERWRITE PLATFORM
+            Object.defineProperty(navigator, 'platform', {
+                get: () => '${fingerprint.platform}'
+            });
+            
+            // 🎭 OVERWRITE USER AGENT
+            Object.defineProperty(navigator, 'userAgent', {
+                get: () => '${fingerprint.userAgent}'
+            });
+            
+            // 🎭 OVERWRITE HARDWARE CONCURRENCY
+            Object.defineProperty(navigator, 'hardwareConcurrency', {
+                get: () => 8
+            });
+            
+            // 🎭 OVERWRITE DEVICE MEMORY
+            Object.defineProperty(navigator, 'deviceMemory', {
+                get: () => 8
+            });
+            
+            // 🖥️ SPOOF SCREEN PROPERTIES
+            Object.defineProperty(screen, 'width', { get: () => ${fingerprint.screen.width} });
+            Object.defineProperty(screen, 'height', { get: () => ${fingerprint.screen.height} });
+            Object.defineProperty(screen, 'availWidth', { get: () => ${fingerprint.screen.width - 100} });
+            Object.defineProperty(screen, 'availHeight', { get: () => ${fingerprint.screen.height - 100} });
+            
+            // 🌍 SPOOF TIMEZONE
+            const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
+            Date.prototype.getTimezoneOffset = function() {
+                return -300; // EST offset
+            };
+            
+            console.log('✅ Stealth mode activated');
+        `;
+    }
 
-            console.log(`✅ GitHub scraping completed: ${enrichedResults.length} results`);
+    // 🌐 SETUP ADVANCED ROUTING
+    async setupAdvancedRouting() {
+        await this.context.route('**/*', async (route, request) => {
+            const url = request.url();
+            
+            // 🚫 BLOCK TRACKERS & ADS
+            if (this.shouldBlock(url)) {
+                await route.abort();
+                return;
+            }
+            
+            // 🎭 MODIFY HEADERS
+            const headers = request.headers();
+            this.modifyHeaders(headers);
+            
+            await route.continue({ headers });
+        });
+    }
+
+    shouldBlock(url) {
+        const blockedDomains = [
+            'google-analytics.com',
+            'googletagmanager.com',
+            'doubleclick.net',
+            'facebook.net',
+            'scorecardresearch.com'
+        ];
+        
+        for (const domain of blockedDomains) {
+            if (url.includes(domain)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    modifyHeaders(headers) {
+        headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8';
+        headers['Accept-Language'] = 'en-US,en;q=0.9';
+        headers['Accept-Encoding'] = 'gzip, deflate, br';
+        headers['Upgrade-Insecure-Requests'] = '1';
+        headers['Sec-Fetch-Dest'] = 'document';
+        headers['Sec-Fetch-Mode'] = 'navigate';
+        headers['Sec-Fetch-Site'] = 'none';
+        headers['Sec-Fetch-User'] = '?1';
+        headers['Cache-Control'] = 'max-age=0';
+        headers['DNT'] = '1';
+        
+        // 🎭 RANDOM REFERER
+        const referers = [
+            'https://www.google.com/',
+            'https://www.bing.com/',
+            'https://duckduckgo.com/',
+            ''
+        ];
+        headers['Referer'] = referers[Math.floor(Math.random() * referers.length)];
+    }
+
+    // 🔍 GITHUB SCRAPING - BEAST MODE
+    async scrapeGitHub(query, options = {}) {
+        console.log(`🔍 Scraping GitHub: ${query}`);
+        
+        await this.initialize();
+        const page = await this.context.newPage();
+        
+        try {
+            // 🎭 HUMAN-LIKE BEHAVIOR
+            await this.simulateHumanBehavior(page);
+            
+            // 🔗 BUILD SEARCH URL
+            const searchUrl = this.buildGitHubSearchUrl(query, options);
+            console.log(`🌐 Navigating to: ${searchUrl}`);
+            
+            await page.goto(searchUrl, {
+                waitUntil: 'networkidle',
+                timeout: this.config.timeout
+            });
+            
+            // 🛡️ CHECK FOR BLOCKS
+            const isBlocked = await this.checkForBlocks(page);
+            if (isBlocked) {
+                throw new Error('Blocked by GitHub');
+            }
+            
+            // 📊 EXTRACT RESULTS
+            const results = await this.extractGitHubResults(page, options);
+            console.log(`✅ Found ${results.length} results`);
+            
+            // 💾 ENRICH RESULTS
+            const enrichedResults = await this.enrichGitHubResults(results, options);
+            
             return enrichedResults;
-
+            
         } catch (error) {
             console.error('❌ GitHub scraping failed:', error);
-            this.stats.failedScrapes++;
             throw error;
-        }
-    }
-
-    buildGitHubSearchUrl(query, filters) {
-        let searchQuery = query;
-        
-        // Add language filter
-        if (filters.language) {
-            searchQuery += ` language:${filters.language}`;
-        }
-        
-        // Add fork filter
-        if (!filters.includeForks) {
-            searchQuery += ' fork:false';
-        }
-        
-        // Add archived filter
-        if (!filters.includeArchived) {
-            searchQuery += ' archived:false';
-        }
-        
-        // Add stars filter
-        if (filters.minStars > 0) {
-            searchQuery += ` stars:>=${filters.minStars}`;
-        }
-        
-        // Add forks filter
-        if (filters.minForks > 0) {
-            searchQuery += ` forks:>=${filters.minForks}`;
-        }
-        
-        // Add updated filter
-        if (filters.updatedAfter) {
-            searchQuery += ` pushed:>=${filters.updatedAfter}`;
-        }
-
-        const encodedQuery = encodeURIComponent(searchQuery);
-        return `https://github.com/search?q=${encodedQuery}&type=repositories`;
-    }
-
-    async extractGitHubResults() {
-        return await this.page.$$eval('[data-testid="results-list"] .Box-row', (repoElements) => {
-            return repoElements.map(repo => {
-                const titleElement = repo.querySelector('a[data-hydro-click]');
-                const descriptionElement = repo.querySelector('p');
-                const metaElements = repo.querySelectorAll('.mr-3');
-                
-                let stars = 0;
-                let forks = 0;
-                let language = '';
-
-                metaElements.forEach(meta => {
-                    const text = meta.textContent.trim();
-                    if (text.includes('k')) {
-                        const value = parseFloat(text) * 1000;
-                        if (meta.querySelector('svg.octicon-star')) stars = value;
-                        if (meta.querySelector('svg.octicon-repo-forked')) forks = value;
-                    }
-                    if (meta.querySelector('.repo-language-color')) {
-                        language = text;
-                    }
-                });
-
-                return {
-                    title: titleElement?.textContent?.trim() || 'Unknown',
-                    description: descriptionElement?.textContent?.trim() || '',
-                    url: titleElement?.href || '',
-                    stars: Math.round(stars),
-                    forks: Math.round(forks),
-                    language: language,
-                    platform: 'github'
-                };
-            });
-        });
-    }
-
-    async hasNextGitHubPage() {
-        return await this.page.$('.pagination .next_page:not(.disabled)') !== null;
-    }
-
-    async goToNextGitHubPage() {
-        await this.page.click('.pagination .next_page:not(.disabled)');
-        await this.page.waitForSelector('[data-testid="results-list"] .Box-row', { timeout: 10000 });
-    }
-
-    async enrichGitHubResults(results, fileTypes) {
-        const enrichedResults = [];
-        
-        for (const result of results) {
-            try {
-                console.log(`🔍 Enriching GitHub result: ${result.title}`);
-                
-                await this.page.goto(result.url, { waitUntil: 'networkidle' });
-                
-                // Get repository size
-                const size = await this.page.$eval('[href*="graphs/contributors"] + .text-small', 
-                    el => el.textContent.trim().match(/([\d.]+)\s*([KMG]?B)/)).catch(() => null);
-                
-                // Get README content
-                const readme = await this.page.$eval('#readme', el => el.textContent.trim()).catch(() => '');
-                
-                // Extract code files
-                const codeFiles = await this.extractGitHubCodeFiles(fileTypes);
-                
-                enrichedResults.push({
-                    ...result,
-                    size: this.parseSize(size ? size[0] : '0 KB'),
-                    description: readme || result.description,
-                    files: codeFiles,
-                    code: codeFiles.length > 0 ? codeFiles[0].content : '',
-                    date: new Date().toISOString()
-                });
-
-                await this.randomDelay(500, 1500); // Be respectful to GitHub
-                
-            } catch (error) {
-                console.warn(`⚠️ Failed to enrich GitHub result ${result.title}:`, error.message);
-                enrichedResults.push(result); // Add basic result anyway
-            }
-        }
-        
-        return enrichedResults;
-    }
-
-    async extractGitHubCodeFiles(fileTypes) {
-        try {
-            // Navigate to the code tab
-            await this.page.click('#code-tab');
-            await this.page.waitForSelector('[aria-label="File Browser"]', { timeout: 5000 });
-
-            const files = await this.page.$$eval('[aria-label="File Browser"] [role="row"]', (rows, fileTypes) => {
-                return rows.map(row => {
-                    const nameElement = row.querySelector('[role="rowheader"] a');
-                    const sizeElement = row.querySelector('[role="gridcell"]:last-child');
-                    
-                    if (!nameElement) return null;
-
-                    const name = nameElement.textContent.trim();
-                    const extension = '.' + name.split('.').pop();
-                    
-                    // Filter by file types
-                    if (!fileTypes.includes(extension)) return null;
-
-                    return {
-                        name: name,
-                        url: nameElement.href,
-                        size: sizeElement?.textContent?.trim() || '0 KB',
-                        type: extension
-                    };
-                }).filter(Boolean);
-            }, fileTypes);
-
-            // Get content for each file (limited to first few to be respectful)
-            const filesWithContent = [];
-            for (const file of files.slice(0, 5)) {
-                try {
-                    const content = await this.getGitHubFileContent(file.url);
-                    filesWithContent.push({
-                        ...file,
-                        content: content
-                    });
-                } catch (error) {
-                    console.warn(`⚠️ Could not get content for ${file.name}:`, error.message);
-                }
-            }
-
-            return filesWithContent;
-        } catch (error) {
-            console.warn('⚠️ Could not extract GitHub code files:', error.message);
-            return [];
-        }
-    }
-
-    async getGitHubFileContent(fileUrl) {
-        const page = await this.context.newPage();
-        try {
-            await page.goto(fileUrl, { waitUntil: 'networkidle' });
-            const content = await page.$eval('.blob-wrapper', el => el.textContent.trim());
-            return content;
         } finally {
             await page.close();
         }
     }
 
-    // 🦊 GITLAB SCRAPER
-    async scrapeGitLab(query, options = {}) {
-        const {
-            maxResults = 50,
-            language = '',
-            fileTypes = ['.js', '.py', '.java']
-        } = options;
+    buildGitHubSearchUrl(query, options) {
+        const params = new URLSearchParams();
+        params.append('q', query);
+        
+        if (options.language) {
+            params.append('l', options.language);
+        }
+        
+        if (options.minStars) {
+            params.append('stars', `>=${options.minStars}`);
+        }
+        
+        if (options.updatedAfter) {
+            params.append('pushed', `>${options.updatedAfter}`);
+        }
+        
+        return `https://github.com/search?${params.toString()}&type=repositories`;
+    }
 
-        console.log(`🔍 Searching GitLab for: "${query}"`);
-
-        try {
-            const searchUrl = `https://gitlab.com/search?search=${encodeURIComponent(query)}&scope=projects`;
-            await this.page.goto(searchUrl, { waitUntil: 'networkidle' });
-
-            const results = [];
-            let hasNextPage = true;
-
-            while (results.length < maxResults && hasNextPage) {
-                const pageResults = await this.extractGitLabResults();
-                results.push(...pageResults);
-
-                hasNextPage = await this.hasNextGitLabPage();
-                if (hasNextPage && results.length < maxResults) {
-                    await this.goToNextGitLabPage();
-                    await this.randomDelay(1000, 3000);
-                }
-            }
-
-            const enrichedResults = await this.enrichGitLabResults(results.slice(0, maxResults), fileTypes);
+    async extractGitHubResults(page, options) {
+        const results = [];
+        
+        // 🔄 HANDLE PAGINATION
+        let hasNextPage = true;
+        let pageNum = 1;
+        const maxPages = Math.ceil(options.maxResults / 30) || 2;
+        
+        while (hasNextPage && results.length < options.maxResults && pageNum <= maxPages) {
+            console.log(`📄 Processing page ${pageNum}`);
             
-            this.stats.totalResults += enrichedResults.length;
-            this.stats.platforms.gitlab = (this.stats.platforms.gitlab || 0) + enrichedResults.length;
-            this.stats.successfulScrapes++;
+            // ⏳ HUMAN-LIKE DELAY
+            await this.humanDelay();
+            
+            // 📝 EXTRACT CURRENT PAGE
+            const pageResults = await page.evaluate(() => {
+                const items = [];
+                const repoElements = document.querySelectorAll('.repo-list-item, .Box-row');
+                
+                for (const element of repoElements) {
+                    const titleElement = element.querySelector('a[data-hydro-click*="REPOSITORY"]');
+                    const descriptionElement = element.querySelector('p');
+                    const languageElement = element.querySelector('[itemprop="programmingLanguage"]');
+                    const starsElement = element.querySelector('a[href*="stargazers"]');
+                    
+                    if (titleElement) {
+                        items.push({
+                            title: titleElement.textContent.trim(),
+                            url: titleElement.href,
+                            description: descriptionElement ? descriptionElement.textContent.trim() : '',
+                            language: languageElement ? languageElement.textContent.trim() : null,
+                            stars: starsElement ? parseInt(starsElement.textContent.trim().replace(',', '')) : 0
+                        });
+                    }
+                }
+                
+                return items;
+            });
+            
+            results.push(...pageResults);
+            
+            // 🔗 CHECK FOR NEXT PAGE
+            const nextPageButton = await page.$('.pagination a[rel="next"]');
+            if (nextPageButton && pageNum < maxPages) {
+                await nextPageButton.click();
+                await page.waitForLoadState('networkidle');
+                pageNum++;
+            } else {
+                hasNextPage = false;
+            }
+        }
+        
+        return results.slice(0, options.maxResults);
+    }
 
-            console.log(`✅ GitLab scraping completed: ${enrichedResults.length} results`);
-            return enrichedResults;
+    async enrichGitHubResults(results, options) {
+        const enriched = [];
+        
+        for (const result of results) {
+            try {
+                // 🎯 GET ADDITIONAL DETAILS
+                const details = await this.getRepositoryDetails(result.url);
+                
+                enriched.push({
+                    ...result,
+                    ...details,
+                    platform: 'github',
+                    date: new Date().toISOString(),
+                    scraped: true
+                });
+                
+                // ⏳ RATE LIMITING
+                await this.humanDelay();
+                
+            } catch (error) {
+                console.warn(`⚠️ Could not enrich ${result.title}:`, error.message);
+                enriched.push({
+                    ...result,
+                    platform: 'github',
+                    date: new Date().toISOString(),
+                    scraped: false
+                });
+            }
+        }
+        
+        return enriched;
+    }
 
+    async getRepositoryDetails(url) {
+        const page = await this.context.newPage();
+        
+        try {
+            await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+            
+            return await page.evaluate(() => {
+                const details = {};
+                
+                // 📊 GET README
+                const readmeElement = document.querySelector('#readme');
+                if (readmeElement) {
+                    details.readme = readmeElement.textContent.trim().substring(0, 1000);
+                }
+                
+                // 📁 GET FILE COUNT
+                const fileElements = document.querySelectorAll('[role="rowheader"]');
+                details.fileCount = fileElements.length;
+                
+                // 🔄 GET LAST UPDATED
+                const updatedElement = document.querySelector('relative-time');
+                if (updatedElement) {
+                    details.lastUpdated = updatedElement.getAttribute('datetime');
+                }
+                
+                return details;
+            });
+            
+        } finally {
+            await page.close();
+        }
+    }
+
+    // 🔄 GITLAB SCRAPING
+    async scrapeGitLab(query, options = {}) {
+        console.log(`🔍 Scraping GitLab: ${query}`);
+        
+        await this.initialize();
+        const page = await this.context.newPage();
+        
+        try {
+            const searchUrl = `https://gitlab.com/search?search=${encodeURIComponent(query)}`;
+            await page.goto(searchUrl, { waitUntil: 'networkidle' });
+            
+            await this.humanDelay();
+            
+            const results = await page.evaluate(() => {
+                const items = [];
+                const projectElements = document.querySelectorAll('.project-row');
+                
+                for (const element of projectElements) {
+                    const titleElement = element.querySelector('.project-full-name');
+                    const descriptionElement = element.querySelector('.description');
+                    const starsElement = element.querySelector('.stars-count');
+                    
+                    if (titleElement) {
+                        items.push({
+                            title: titleElement.textContent.trim(),
+                            url: titleElement.href,
+                            description: descriptionElement ? descriptionElement.textContent.trim() : '',
+                            stars: starsElement ? parseInt(starsElement.textContent.trim()) : 0,
+                            platform: 'gitlab'
+                        });
+                    }
+                }
+                
+                return items;
+            });
+            
+            return results.slice(0, options.maxResults);
+            
         } catch (error) {
             console.error('❌ GitLab scraping failed:', error);
-            this.stats.failedScrapes++;
             throw error;
-        }
-    }
-
-    async extractGitLabResults() {
-        return await this.page.$$eval('.projects-list .project-row', (projectElements) => {
-            return projectElements.map(project => {
-                const titleElement = project.querySelector('.project-full-name');
-                const descriptionElement = project.querySelector('.description');
-                const starElement = project.querySelector('.stars-count');
-                const languageElement = project.querySelector('.language');
-                
-                return {
-                    title: titleElement?.textContent?.trim() || 'Unknown',
-                    description: descriptionElement?.textContent?.trim() || '',
-                    url: titleElement?.href || '',
-                    stars: parseInt(starElement?.textContent?.replace(/[^\d]/g, '') || '0'),
-                    language: languageElement?.textContent?.trim() || '',
-                    platform: 'gitlab'
-                };
-            });
-        });
-    }
-
-    async hasNextGitLabPage() {
-        return await this.page.$('.pagination .next:not(.disabled)') !== null;
-    }
-
-    async goToNextGitLabPage() {
-        await this.page.click('.pagination .next:not(.disabled)');
-        await this.page.waitForSelector('.projects-list .project-row', { timeout: 10000 });
-    }
-
-    async enrichGitLabResults(results, fileTypes) {
-        const enrichedResults = [];
-        
-        for (const result of results) {
-            try {
-                console.log(`🔍 Enriching GitLab result: ${result.title}`);
-                
-                await this.page.goto(result.url, { waitUntil: 'networkidle' });
-                
-                // Get additional project info
-                const lastActivity = await this.page.$eval('.last-activity', el => el.textContent.trim()).catch(() => '');
-                const readme = await this.page.$eval('.readme-holder', el => el.textContent.trim()).catch(() => '');
-                
-                // Extract code files from the repository
-                const codeFiles = await this.extractGitLabCodeFiles(fileTypes);
-                
-                enrichedResults.push({
-                    ...result,
-                    description: readme || result.description,
-                    files: codeFiles,
-                    code: codeFiles.length > 0 ? codeFiles[0].content : '',
-                    lastActivity: lastActivity,
-                    date: new Date().toISOString()
-                });
-
-                await this.randomDelay(500, 1500);
-                
-            } catch (error) {
-                console.warn(`⚠️ Failed to enrich GitLab result ${result.title}:`, error.message);
-                enrichedResults.push(result);
-            }
-        }
-        
-        return enrichedResults;
-    }
-
-    async extractGitLabCodeFiles(fileTypes) {
-        try {
-            // Navigate to files tab
-            await this.page.click('[data-testid="file-tree"]');
-            await this.page.waitForSelector('.tree-table', { timeout: 5000 });
-
-            const files = await this.page.$$eval('.tree-table tr', (rows, fileTypes) => {
-                return rows.map(row => {
-                    const nameElement = row.querySelector('.tree-item-link');
-                    const sizeElement = row.querySelector('.file-size');
-                    
-                    if (!nameElement) return null;
-
-                    const name = nameElement.textContent.trim();
-                    const extension = '.' + name.split('.').pop();
-                    
-                    if (!fileTypes.includes(extension)) return null;
-
-                    return {
-                        name: name,
-                        url: nameElement.href,
-                        size: sizeElement?.textContent?.trim() || '0 KB',
-                        type: extension
-                    };
-                }).filter(Boolean);
-            }, fileTypes);
-
-            const filesWithContent = [];
-            for (const file of files.slice(0, 5)) {
-                try {
-                    const content = await this.getGitLabFileContent(file.url);
-                    filesWithContent.push({
-                        ...file,
-                        content: content
-                    });
-                } catch (error) {
-                    console.warn(`⚠️ Could not get content for ${file.name}:`, error.message);
-                }
-            }
-
-            return filesWithContent;
-        } catch (error) {
-            console.warn('⚠️ Could not extract GitLab code files:', error.message);
-            return [];
-        }
-    }
-
-    async getGitLabFileContent(fileUrl) {
-        const page = await this.context.newPage();
-        try {
-            await page.goto(fileUrl, { waitUntil: 'networkidle' });
-            const content = await page.$eval('.file-content', el => el.textContent.trim());
-            return content;
         } finally {
             await page.close();
         }
     }
 
-    // 🎯 MAIN SCRAPING METHOD WITH RETRY LOGIC
-    async scrapeWithRetry(platform, query, options = {}, maxRetries = 3) {
-        this.stats.totalRequests++;
+    // 🔄 BITBUCKET SCRAPING
+    async scrapeBitbucket(query, options = {}) {
+        console.log(`🔍 Scraping Bitbucket: ${query}`);
+        
+        await this.initialize();
+        const page = await this.context.newPage();
+        
+        try {
+            const searchUrl = `https://bitbucket.org/repo/all?name=${encodeURIComponent(query)}`;
+            await page.goto(searchUrl, { waitUntil: 'networkidle' });
+            
+            await this.humanDelay();
+            
+            const results = await page.evaluate(() => {
+                const items = [];
+                const repoElements = document.querySelectorAll('.repo-list-item');
+                
+                for (const element of repoElements) {
+                    const titleElement = element.querySelector('.repo-link');
+                    const descriptionElement = element.querySelector('.description');
+                    
+                    if (titleElement) {
+                        items.push({
+                            title: titleElement.textContent.trim(),
+                            url: titleElement.href,
+                            description: descriptionElement ? descriptionElement.textContent.trim() : '',
+                            platform: 'bitbucket'
+                        });
+                    }
+                }
+                
+                return items;
+            });
+            
+            return results.slice(0, options.maxResults);
+            
+        } catch (error) {
+            console.error('❌ Bitbucket scraping failed:', error);
+            throw error;
+        } finally {
+            await page.close();
+        }
+    }
+
+    // 🔄 STACK OVERFLOW SCRAPING
+    async scrapeStackOverflow(query, options = {}) {
+        console.log(`🔍 Scraping Stack Overflow: ${query}`);
+        
+        await this.initialize();
+        const page = await this.context.newPage();
+        
+        try {
+            const searchUrl = `https://stackoverflow.com/search?q=${encodeURIComponent(query)}`;
+            await page.goto(searchUrl, { waitUntil: 'networkidle' });
+            
+            await this.humanDelay();
+            
+            const results = await page.evaluate(() => {
+                const items = [];
+                const questionElements = document.querySelectorAll('.question-summary');
+                
+                for (const element of questionElements) {
+                    const titleElement = element.querySelector('.question-hyperlink');
+                    const votesElement = element.querySelector('.vote-count-post');
+                    const answerElement = element.querySelector('.status strong');
+                    const tagsElements = element.querySelectorAll('.post-tag');
+                    
+                    if (titleElement) {
+                        items.push({
+                            title: titleElement.textContent.trim(),
+                            url: titleElement.href,
+                            votes: votesElement ? parseInt(votesElement.textContent.trim()) : 0,
+                            answers: answerElement ? parseInt(answerElement.textContent.trim()) : 0,
+                            tags: Array.from(tagsElements).map(tag => tag.textContent.trim()),
+                            platform: 'stackoverflow'
+                        });
+                    }
+                }
+                
+                return items;
+            });
+            
+            return results.slice(0, options.maxResults);
+            
+        } catch (error) {
+            console.error('❌ Stack Overflow scraping failed:', error);
+            throw error;
+        } finally {
+            await page.close();
+        }
+    }
+
+    // 🔄 CODE PEN SCRAPING
+    async scrapeCodePen(query, options = {}) {
+        console.log(`🔍 Scraping CodePen: ${query}`);
+        
+        await this.initialize();
+        const page = await this.context.newPage();
+        
+        try {
+            const searchUrl = `https://codepen.io/search/pens?q=${encodeURIComponent(query)}`;
+            await page.goto(searchUrl, { waitUntil: 'networkidle' });
+            
+            await this.humanDelay();
+            
+            const results = await page.evaluate(() => {
+                const items = [];
+                const penElements = document.querySelectorAll('.single-pen');
+                
+                for (const element of penElements) {
+                    const titleElement = element.querySelector('.title a');
+                    const authorElement = element.querySelector('.author a');
+                    const heartElement = element.querySelector('.heart-count');
+                    
+                    if (titleElement) {
+                        items.push({
+                            title: titleElement.textContent.trim(),
+                            url: titleElement.href,
+                            author: authorElement ? authorElement.textContent.trim() : '',
+                            likes: heartElement ? parseInt(heartElement.textContent.trim()) : 0,
+                            platform: 'codepen'
+                        });
+                    }
+                }
+                
+                return items;
+            });
+            
+            return results.slice(0, options.maxResults);
+            
+        } catch (error) {
+            console.error('❌ CodePen scraping failed:', error);
+            throw error;
+        } finally {
+            await page.close();
+        }
+    }
+
+    // 🔄 MULTI-PLATFORM SCRAPING WITH RETRY
+    async scrapeWithRetry(platform, query, options, maxRetries = 3) {
+        let lastError;
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`🔄 Attempt ${attempt}/${maxRetries} for ${platform}...`);
+                console.log(`🔄 Attempt ${attempt}/${maxRetries} for ${platform}`);
                 
-                if (!this.isInitialized) {
-                    await this.initialize();
+                switch (platform) {
+                    case 'github':
+                        return await this.scrapeGitHub(query, options);
+                    case 'gitlab':
+                        return await this.scrapeGitLab(query, options);
+                    case 'bitbucket':
+                        return await this.scrapeBitbucket(query, options);
+                    case 'stackoverflow':
+                        return await this.scrapeStackOverflow(query, options);
+                    case 'codepen':
+                        return await this.scrapeCodePen(query, options);
+                    default:
+                        throw new Error(`Unsupported platform: ${platform}`);
                 }
-
-                const results = await this[`scrape${this.capitalizeFirst(platform)}`](query, options);
-                this.stats.successfulScrapes++;
-                
-                return results;
                 
             } catch (error) {
+                lastError = error;
                 console.error(`❌ Attempt ${attempt} failed:`, error.message);
                 
-                if (attempt === maxRetries) {
-                    this.stats.failedScrapes++;
-                    throw error;
+                if (attempt < maxRetries) {
+                    // 🔄 ROTATE FINGERPRINT ON FAILURE
+                    await this.rotateFingerprint();
+                    await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
                 }
-                
-                // Wait before retry with exponential backoff
-                const backoffTime = Math.pow(2, attempt) * 1000;
-                console.log(`⏳ Waiting ${backoffTime}ms before retry...`);
-                await this.page.waitForTimeout(backoffTime);
-                
-                // Reinitialize on failure
-                await this.close();
-                await this.initialize();
             }
         }
-    }
-
-    capitalizeFirst(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
-    }
-
-    // 🛠️ UTILITY METHODS
-    detectCodeLanguage(codeFiles) {
-        if (!codeFiles || codeFiles.length === 0) return 'Unknown';
         
-        const languages = new Set();
-        codeFiles.forEach(file => {
-            const ext = file.type.toLowerCase();
-            const langMap = {
-                '.js': 'JavaScript',
-                '.ts': 'TypeScript',
-                '.py': 'Python',
-                '.java': 'Java',
-                '.cpp': 'C++',
-                '.cs': 'C#',
-                '.php': 'PHP',
-                '.rb': 'Ruby',
-                '.go': 'Go',
-                '.rs': 'Rust',
-                '.html': 'HTML',
-                '.css': 'CSS',
-                '.sql': 'SQL'
-            };
-            if (langMap[ext]) {
-                languages.add(langMap[ext]);
-            }
+        throw lastError;
+    }
+
+    // 🎭 HUMAN-LIKE BEHAVIOR
+    async simulateHumanBehavior(page) {
+        // Random mouse movements
+        await page.mouse.move(
+            Math.random() * 500,
+            Math.random() * 500
+        );
+        
+        // Random scroll
+        await page.evaluate(async () => {
+            await new Promise(resolve => {
+                window.scrollBy(0, Math.random() * 300);
+                setTimeout(resolve, 100 + Math.random() * 200);
+            });
         });
         
-        return Array.from(languages).join(' + ') || 'Unknown';
+        // Random typing simulation
+        await page.keyboard.press('Tab');
     }
 
-    parseSize(sizeString) {
-        if (!sizeString) return 0;
-        
-        const match = sizeString.match(/([\d.]+)\s*([KMG]?B)/i);
-        if (!match) return 0;
-        
-        const value = parseFloat(match[1]);
-        const unit = match[2].toUpperCase();
-        
-        const multipliers = {
-            'B': 1,
-            'KB': 1024,
-            'MB': 1024 * 1024,
-            'GB': 1024 * 1024 * 1024
-        };
-        
-        return Math.round(value * (multipliers[unit] || 1));
+    async humanDelay() {
+        const delay = this.config.requestDelay + Math.random() * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    async randomDelay(min, max) {
-        const delay = Math.random() * (max - min) + min;
-        await this.page.waitForTimeout(delay);
+    async checkForBlocks(page) {
+        const content = await page.content();
+        const blockedIndicators = [
+            'captcha',
+            'rate limit',
+            'blocked',
+            'security check',
+            'access denied'
+        ];
+        
+        return blockedIndicators.some(indicator => 
+            content.toLowerCase().includes(indicator)
+        );
     }
 
-    async close() {
+    async rotateFingerprint() {
+        console.log('🎭 Rotating fingerprint...');
+        
+        // Close existing context
         if (this.context) {
             await this.context.close();
         }
-        if (this.browser) {
-            await this.browser.close();
-        }
-        this.isInitialized = false;
-        console.log('🔚 Enhanced Code Scraper closed');
+        
+        // Reinitialize with new fingerprint
+        await this.initialize();
     }
 
+    // 📊 GET STATS
     getStats() {
         return {
-            ...this.stats,
-            successRate: this.stats.totalRequests > 0 
-                ? (this.stats.successfulScrapes / this.stats.totalRequests) * 100 
-                : 0
+            requests: this.retryCount,
+            blockedAttempts: this.blockedCount,
+            resultsFound: this.results.length,
+            memoryUsage: process.memoryUsage()
+        };
+    }
+
+    // 🧹 CLEANUP
+    async close() {
+        console.log('🧹 Cleaning up scraper...');
+        
+        for (const page of this.pages.values()) {
+            try {
+                await page.close();
+            } catch (error) {
+                console.error('Error closing page:', error);
+            }
+        }
+        this.pages.clear();
+        
+        if (this.context) {
+            await this.context.close();
+            this.context = null;
+        }
+        
+        if (this.browser) {
+            await this.browser.close();
+            this.browser = null;
+        }
+        
+        console.log('✅ Scraper closed');
+    }
+
+    // 🎯 HELPER METHODS
+    generateFingerprintDB() {
+        return {
+            userAgents: [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ],
+            screenResolutions: [
+                { width: 1920, height: 1080 },
+                { width: 1366, height: 768 },
+                { width: 1440, height: 900 },
+                { width: 1536, height: 864 }
+            ],
+            timezones: [
+                'America/New_York',
+                'America/Los_Angeles',
+                'Europe/London',
+                'Europe/Paris',
+                'Asia/Tokyo'
+            ]
         };
     }
 }
