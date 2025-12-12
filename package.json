@@ -4,6 +4,7 @@
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
+    "test-scraper": "node test-scraper.js",
   "dev": "vite --host", 
   "build": "vite build",
   "preview": "vite preview",

@@ -104,32 +104,31 @@ class ProductionScraper {
   }
 
   async initialize() {
-    if (!this.scraper) {
-      // 🎯 GET PROXY CONFIGURATION
-      const proxyConfig = await this.getProxyConfig();
-      
-      // 🚀 CONFIGURE BEAST MODE
-      const beastModeConfig = {
-        ...this.config,
-        proxy: proxyConfig,
-        headless: this.config.headless !== false ? 'new' : false,
-        stealthLevel: this.config.stealthLevel || 'nuclear',
-        humanize: true,
-        requestDelay: this.config.requestDelay || 1000 + Math.random() * 2000,
-        timeout: this.config.timeout || 45000
-      };
-      
-      this.scraper = new EnhancedCodeScraper(beastModeConfig);
-      await this.scraper.initialize();
-      
-      console.log('🚀 BEAST MODE initialized with config:', {
-        proxy: proxyConfig ? '✓' : '✗',
-        stealthLevel: beastModeConfig.stealthLevel,
-        requestDelay: beastModeConfig.requestDelay,
-        headless: beastModeConfig.headless
-      });
-    }
+  if (!this.scraper) {
+    const proxyConfig = await this.getProxyConfig();
+    
+    // 🚀 USE THE ULTIMATE CONFIG
+    const ultimateConfig = {
+      ...this.config,
+      proxy: proxyConfig,
+      headless: this.config.headless !== false ? 'new' : false,
+      stealthLevel: 'nuclear', // Changed from 'nuclear' to 'nuclear' (same)
+      humanize: true,
+      canvasNoise: true,
+      audioContextNoise: true,
+      webGLVendorSpoofing: true,
+      selfHealing: true, // NEW: Enable self-healing
+      requestDelay: this.config.requestDelay || 1500 + Math.random() * 1000,
+      timeout: this.config.timeout || 45000
+    };
+    
+    // Use the new EnhancedCodeScraper
+    this.scraper = new EnhancedCodeScraper(ultimateConfig);
+    await this.scraper.initialize();
+    
+    console.log('🚀 ULTIMATE BEAST MODE initialized');
   }
+}
 
   async getProxyConfig() {
     if (!this.proxies || this.proxies.length === 0) {
@@ -1519,6 +1518,70 @@ ipcMain.handle('get-storage-usage', async () => {
       }
     };
     
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// DEBUG INFO HANDLER
+ipcMain.handle('get-debug-info', async () => {
+  try {
+    const page = await scraper.context.newPage();
+    await page.goto('https://github.com/search?q=test&type=repositories');
+    
+    const info = await page.evaluate(() => {
+      const selectors = [
+        '[data-testid="results-list"]',
+        '.repo-list',
+        '.Box-row',
+        '.search-title',
+        '.f4 a',
+        '[data-hydro-click*="REPOSITORY"]'
+      ];
+      
+      const results = {};
+      selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        results[selector] = {
+          count: elements.length,
+          sample: elements.length > 0 ? elements[0].outerHTML.substring(0, 100) : 'none'
+        };
+      });
+      
+      return {
+        url: window.location.href,
+        title: document.title,
+        selectors: results,
+        timestamp: new Date().toISOString()
+      };
+    });
+    
+    await page.close();
+    return { success: true, info };
+    
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// COMMUNITY SELECTOR SHARING (SIMULATED)
+ipcMain.handle('share-selector', async (event, data) => {
+  console.log(`🤝 User shared selector for ${data.platform}: ${data.selector}`);
+  // In real app, this would POST to your API
+  return { success: true, message: 'Thanks for helping the community!' };
+});
+
+// GET SCRAPER STATS
+ipcMain.handle('get-scraper-stats', async () => {
+  try {
+    const scraper = activeScrapers.values().next().value;
+    if (scraper && scraper.scraper) {
+      return {
+        success: true,
+        stats: scraper.scraper.getStats()
+      };
+    }
+    return { success: false, error: 'No active scraper' };
   } catch (error) {
     return { success: false, error: error.message };
   }

@@ -215,6 +215,83 @@
           </label>
         </div>
 
+  <!-- 🐉 Add Beast Mode Settings Panel (somewhere in your form) -->
+  <div v-if="showBeastModeSettings" class="beast-mode-settings">
+    <h4>🐉 Beast Mode Settings</h4>
+    
+    <div class="preset-buttons">
+      <button @click="applyBeastModePreset('balanced')" class="btn-preset">
+        ⚖️ Balanced
+      </button>
+      <button @click="applyBeastModePreset('stealth')" class="btn-preset">
+        🛡️ Maximum Stealth
+      </button>
+      <button @click="applyBeastModePreset('fast')" class="btn-preset">
+        ⚡ Fast Mode
+      </button>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" v-model="scrapingConfig.stealthMode" />
+        Enable Maximum Stealth
+      </label>
+      <small>WebGL/Canvas/Audio spoofing, fingerprint rotation</small>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" v-model="scrapingConfig.selfHealing" />
+        Enable Self-Healing
+      </label>
+      <small>Auto-adapts when websites change</small>
+    </div>
+    
+    <div class="form-group">
+      <label>Human Emulation:</label>
+      <select v-model="scrapingConfig.humanization">
+        <option value="low">Low (Faster)</option>
+        <option value="medium">Medium (Balanced)</option>
+        <option value="high">High (Most Human-like)</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label>Fingerprint Rotation:</label>
+      <select v-model="scrapingConfig.fingerprintRotation">
+        <option value="auto">Auto (Recommended)</option>
+        <option value="per-session">Per Session</option>
+        <option value="per-request">Per Request</option>
+        <option value="never">Never</option>
+      </select>
+    </div>
+    
+    <div class="advanced-options">
+      <h5>Advanced Options:</h5>
+      <label>
+        <input type="checkbox" v-model="scrapingConfig.canvasNoise" />
+        Canvas Fingerprint Noise
+      </label>
+      <label>
+        <input type="checkbox" v-model="scrapingConfig.audioSpoofing" />
+        Audio Context Spoofing
+      </label>
+      <label>
+        <input type="checkbox" v-model="scrapingConfig.webGLSpoofing" />
+        WebGL Vendor Spoofing
+      </label>
+    </div>
+    
+    <button @click="exportBeastModeConfig" class="btn-export">
+      💾 Export Config
+    </button>
+    
+    <label class="btn-import">
+      📂 Import Config
+      <input type="file" @change="importBeastModeConfig" accept=".json" hidden>
+    </label>
+  </div>
+
         <!-- Repository Filters -->
         <div class="form-row" v-if="['github', 'gitlab', 'bitbucket'].includes(scrapingConfig.platform)">
           <div class="form-group">
@@ -370,6 +447,23 @@
         Clear All
       </button>
     </div>
+
+  <!-- 🐉 Add Quick Action Buttons (near your start/stop buttons) -->
+  <div class="quick-actions">
+    <button @click="startQuickBeastMode" class="btn-quick">
+      🚀 Quick Beast Mode
+    </button>
+    <button @click="runDiagnostic" class="btn-diagnostic">
+      🔧 Run Diagnostic
+    </button>
+    <button @click="toggleBeastModeSettings" class="btn-beast-settings">
+      ⚙️ Beast Settings
+    </button>
+    <button @click="toggleDebugPanel" class="btn-debug">
+      🐛 Debug Panel
+    </button>
+  </div>
+  
 
     <!-- Progress Tracking -->
     <div v-if="isScraping || progress.total > 0" class="progress-section">
@@ -636,6 +730,43 @@
         </button>
       </div>
     </div>
+    
+ <!-- 🐉 Add Debug Panel (somewhere in your UI) -->
+  <div v-if="showDebugPanel" class="debug-panel">
+    <h4>🔧 Debug & Diagnostics</h4>
+    
+    <div v-if="debugInfo">
+      <h5>Page Analysis:</h5>
+      <pre>{{ debugInfo }}</pre>
+      
+      <div v-if="debugInfo.bestSelector">
+        <p>Best selector found: <code>{{ debugInfo.bestSelector }}</code></p>
+        <button @click="shareWithCommunity" class="btn-share">
+          🤝 Share with Community
+        </button>
+      </div>
+    </div>
+    
+    <div v-if="diagnostics.selectorTestResults.length > 0">
+      <h5>Selector Test Results:</h5>
+      <ul>
+        <li v-for="selector in diagnostics.selectorTestResults" :key="selector.selector">
+          {{ selector.selector }}: 
+          <span :class="selector.working ? 'text-success' : 'text-danger'">
+            {{ selector.working ? '✓ Working' : '✗ Failed' }}
+          </span>
+          ({{ selector.count }} elements)
+        </li>
+      </ul>
+    </div>
+    
+    <button @click="testSelectors" class="btn-test">
+      🔍 Test Selectors
+    </button>
+    <button @click="captureDebugInfo" class="btn-capture">
+      📸 Capture Page Info
+    </button>
+  </div>
 
     <!-- Result Viewer Modal -->
     <div v-if="selectedResult" class="modal-overlay" @click="selectedResult = null">
@@ -832,6 +963,9 @@ export default {
       showExportModal: false,
       selectedResult: null,
       autoScrollLogs: true,
+      showBeastModeSettings: false, // NEW: Beast mode settings panel
+      showDebugPanel: false, // NEW: Debug panel
+      
       fileTypes: [
         { value: '.js', label: 'JavaScript', icon: 'vscode-icons:file-type-js' },
         { value: '.ts', label: 'TypeScript', icon: 'vscode-icons:file-type-typescript' },
@@ -850,6 +984,7 @@ export default {
         { value: '.md', label: 'Markdown', icon: 'vscode-icons:file-type-markdown' },
         { value: '.yml', label: 'YAML', icon: 'vscode-icons:file-type-yaml' }
       ],
+      
       scrapingConfig: {
         query: '',
         platform: 'github',
@@ -870,8 +1005,26 @@ export default {
         timeout: 60,
         minStars: 0,
         minForks: 0,
-        updatedAfter: ''
+        updatedAfter: '',
+        
+        // 🐉 BEAST MODE SETTINGS (NEW)
+        stealthMode: true,
+        selfHealing: true,
+        humanization: 'medium',
+        fingerprintRotation: 'auto',
+        canvasNoise: true,
+        audioSpoofing: true,
+        webGLSpoofing: true,
+        webRTCPublicIP: '192.168.1.100'
       },
+      
+      // NEW: Beast mode presets
+      beastModePresets: [
+        { id: 'balanced', name: 'Balanced', stealth: true, delay: 1500, humanize: true },
+        { id: 'stealth', name: 'Maximum Stealth', stealth: true, delay: 2500, humanize: true, canvasNoise: true, audioSpoofing: true },
+        { id: 'fast', name: 'Fast Mode', stealth: false, delay: 500, humanize: false }
+      ],
+      
       progress: {
         current: 0,
         total: 0,
@@ -882,6 +1035,7 @@ export default {
         successRate: 100,
         estimatedTime: 'Calculating...'
       },
+      
       platformProgress: [],
       logs: [],
       results: [],
@@ -893,15 +1047,25 @@ export default {
         sortBy: 'date',
         onlyWithCode: false
       },
+      
       exportConfig: {
         format: 'json',
         includeCode: true,
         includeMetadata: true,
         onlyBookmarked: false
       },
+      
       scraper: null,
       hasMoreResults: false,
-      currentScraperId: null
+      currentScraperId: null,
+      
+      // NEW: Debug info
+      debugInfo: null,
+      diagnostics: {
+        selectorTestResults: [],
+        fingerprintInfo: null,
+        blockDetection: false
+      }
     }
   },
     setup() {
@@ -972,7 +1136,7 @@ export default {
       }, 5000);
     };
     
-    // Adjust concurrency
+      // Adjust concurrency
     const adjustConcurrency = async () => {
       const newMax = prompt('Enter maximum concurrent jobs (1-20):', maxConcurrentJobs.value);
       if (newMax && !isNaN(newMax)) {
@@ -988,14 +1152,11 @@ export default {
               ramThreshold: 85
             });
           }
-          
-          // Add log
-          // this.addLog('info', `Maximum concurrent jobs set to ${value}`);
         }
       }
     };
     
-    // Initialize
+ // Initialize
     onMounted(() => {
       startMiniMonitoring();
       
@@ -1041,6 +1202,7 @@ export default {
       startMiniMonitoring
     };
   },
+  
   computed: {
     filteredResults() {
       let filtered = this.results
@@ -1074,8 +1236,15 @@ export default {
     totalSize() {
       const totalBytes = this.results.reduce((sum, result) => sum + (result.size || 0), 0)
       return this.formatFileSize(totalBytes)
+    },
+    
+    // NEW: Check if user has Pro tier (for beast mode)
+    hasProFeatures() {
+      // You'll implement this based on your licensing
+      return true; // For now, assume everyone has pro
     }
   },
+  
   async mounted() {
     await this.loadProxyGroups()
     await this.loadAccounts()
@@ -1086,6 +1255,7 @@ export default {
     // Load previous results and session
     this.loadSavedData()
   },
+  
   watch: {
     autoScrollLogs(newVal) {
       if (newVal) {
@@ -1100,7 +1270,351 @@ export default {
       }
     }
   },
+  
   methods: {
+    // 🐉 NEW BEAST MODE METHODS
+    
+    applyBeastModePreset(presetId) {
+      const preset = this.beastModePresets.find(p => p.id === presetId);
+      if (preset) {
+        this.scrapingConfig.stealthMode = preset.stealth;
+        this.scrapingConfig.requestDelay = preset.delay;
+        this.scrapingConfig.humanization = preset.humanize ? 'high' : 'low';
+        this.scrapingConfig.canvasNoise = preset.canvasNoise || false;
+        this.scrapingConfig.audioSpoofing = preset.audioSpoofing || false;
+        
+        this.addLog('info', `Applied "${preset.name}" Beast Mode preset`);
+      }
+    },
+    
+    async runDiagnostic() {
+      this.addLog('info', 'Running scraper diagnostic...');
+      
+      try {
+        if (window.electronAPI && window.electronAPI.diagnoseScraper) {
+          const result = await window.electronAPI.diagnoseScraper({
+            platform: this.scrapingConfig.platform,
+            query: 'test'
+          });
+          
+          if (result.success) {
+            this.diagnostics = result.diagnostics;
+            this.debugInfo = result.info;
+            this.showDebugPanel = true;
+            
+            this.addLog('success', 'Diagnostic completed');
+            
+            // Show user-friendly advice
+            if (result.successRate < 70) {
+              this.addLog('warning', '🔧 Try updating selectors in Advanced Settings');
+            } else if (result.successRate < 85) {
+              this.addLog('info', '⭐ Good! Add proxies for even better results');
+            } else {
+              this.addLog('success', '🎉 Excellent! Your setup is working perfectly');
+            }
+          }
+        }
+      } catch (error) {
+        this.addLog('error', `Diagnostic failed: ${error.message}`);
+      }
+    },
+    
+    async captureDebugInfo() {
+      try {
+        if (window.electronAPI && window.electronAPI.getDebugInfo) {
+          const result = await window.electronAPI.getDebugInfo();
+          if (result.success) {
+            this.debugInfo = result.info;
+            this.showDebugPanel = true;
+            
+            // Auto-suggest best selector
+            if (result.info.bestSelector) {
+              this.addLog('info', `Best selector found: ${result.info.bestSelector}`);
+            }
+          }
+        }
+      } catch (error) {
+        this.addLog('error', `Debug capture failed: ${error.message}`);
+      }
+    },
+    
+    async shareWithCommunity() {
+      if (!this.debugInfo || !this.debugInfo.bestSelector) {
+        this.addLog('error', 'No debug info to share');
+        return;
+      }
+      
+      try {
+        if (window.electronAPI && window.electronAPI.shareSelector) {
+          const result = await window.electronAPI.shareSelector({
+            platform: this.scrapingConfig.platform,
+            selector: this.debugInfo.bestSelector,
+            success: true,
+            user: 'anonymous' // You can get actual username from auth
+          });
+          
+          if (result.success) {
+            this.addLog('success', '🤝 Selector shared with community! Thanks for helping Chad 🇹🇩');
+            alert('Selector shared! You\'re helping improve the scraper for everyone.');
+          }
+        }
+      } catch (error) {
+        this.addLog('error', `Sharing failed: ${error.message}`);
+      }
+    },
+    
+    async testSelectors() {
+      this.addLog('info', 'Testing selectors...');
+      
+      try {
+        if (window.electronAPI && window.electronAPI.testSelectors) {
+          const result = await window.electronAPI.testSelectors({
+            platform: this.scrapingConfig.platform,
+            url: 'https://github.com/search?q=test'
+          });
+          
+          if (result.success) {
+            this.diagnostics.selectorTestResults = result.selectors;
+            this.showDebugPanel = true;
+            
+            this.addLog('info', `Tested ${result.selectors.length} selectors`);
+            
+            // Show working selectors
+            const working = result.selectors.filter(s => s.working);
+            if (working.length > 0) {
+              this.addLog('success', `Found ${working.length} working selectors`);
+            }
+          }
+        }
+      } catch (error) {
+        this.addLog('error', `Selector test failed: ${error.message}`);
+      }
+    },
+    
+    // UPDATED startScraping method with Beast Mode
+    async startScraping() {
+      if (!this.scrapingConfig.query.trim()) {
+        this.addLog('error', 'Please enter a search query')
+        return
+      }
+
+      if (this.scrapingConfig.platform === 'multiple' && this.scrapingConfig.selectedPlatforms.length === 0) {
+        this.addLog('error', 'Please select at least one platform for multi-platform scraping')
+        return
+      }
+      
+      this.isScraping = true;
+  
+      // 🎯 LOAD PROXY SETTINGS
+      let proxySettings = {};
+      try {
+        if (window.electronAPI && window.electronAPI.getProxySettings) {
+          const settingsResult = await window.electronAPI.getProxySettings();
+          if (settingsResult.success) {
+            proxySettings = settingsResult.settings;
+          }
+        }
+      } catch (error) {
+        console.log('Could not load proxy settings:', error);
+      }
+      
+      // 🐉 MAP UI OPTIONS TO SCRAPER CONFIG
+      const scrapingData = {
+        ...this.scrapingConfig,
+        scraperId: this.currentScraperId,
+        proxySettings: proxySettings,
+        
+        // Beast Mode mapping
+        stealthLevel: this.scrapingConfig.stealthMode ? 'nuclear' : 'normal',
+        humanize: this.scrapingConfig.humanization !== 'low',
+        selfHealing: this.scrapingConfig.selfHealing,
+        canvasNoise: this.scrapingConfig.canvasNoise,
+        audioContextNoise: this.scrapingConfig.audioSpoofing,
+        webGLVendorSpoofing: this.scrapingConfig.webGLSpoofing,
+        webRTCPublicIP: this.scrapingConfig.webRTCPublicIP,
+        requestDelay: this.scrapingConfig.requestDelay,
+        fingerprintRotation: this.scrapingConfig.fingerprintRotation
+      };
+      
+      // Log Beast Mode status
+      if (this.scrapingConfig.stealthMode) {
+        this.addLog('info', '🐉 BEAST MODE ENABLED: Maximum stealth activated');
+      }
+      if (this.scrapingConfig.selfHealing) {
+        this.addLog('info', '🧠 SELF-HEALING ENABLED: Scraper will auto-adapt');
+      }
+      
+      this.progress = {
+        current: 0,
+        total: this.scrapingConfig.maxResults,
+        percentage: 0,
+        platform: this.scrapingConfig.platform,
+        status: 'Initializing BEAST MODE...',
+        speed: 0,
+        successRate: 100,
+        estimatedTime: 'Calculating...'
+      }
+
+      this.platformProgress = this.scrapingConfig.platform === 'multiple' 
+        ? this.scrapingConfig.selectedPlatforms.map(platform => ({
+            name: platform,
+            current: 0,
+            total: Math.floor(this.scrapingConfig.maxResults / this.scrapingConfig.selectedPlatforms.length),
+            percentage: 0
+          }))
+        : []
+      
+      this.addLog('info', `Starting scraping session: ${this.scrapingConfig.query}`)
+      
+      try {
+        // Generate unique scraper ID
+        this.currentScraperId = Date.now().toString(36) + Math.random().toString(36).substr(2)
+        
+        // Use IPC to call Electron main process
+        if (window.electronAPI && window.electronAPI.startScraping) {
+          const result = await window.electronAPI.startScraping(scrapingData)
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Scraping failed')
+          }
+          
+          this.addLog('success', 'Scraping started successfully')
+        } else {
+          // Fallback: Simulate scraping
+          this.simulateScraping()
+        }
+        
+      } catch (error) {
+        this.addLog('error', `Scraping failed: ${error.message}`)
+        console.error('Scraping error:', error)
+        this.isScraping = false
+        this.progress.status = 'Error'
+      }
+    },
+    
+    // 🐉 NEW: Quick start with Beast Mode
+    async startQuickBeastMode() {
+      this.scrapingConfig.query = 'react vue angular'
+      this.scrapingConfig.maxResults = 30
+      this.scrapingConfig.platform = 'github'
+      this.scrapingConfig.stealthMode = true
+      this.scrapingConfig.selfHealing = true
+      this.scrapingConfig.humanization = 'high'
+      
+      this.addLog('info', '🚀 Starting QUICK BEAST MODE session...')
+      await this.startScraping()
+    },
+    
+    // 🐉 NEW: Get scraper stats
+    async getScraperStats() {
+      try {
+        if (window.electronAPI && window.electronAPI.getScraperStats) {
+          const result = await window.electronAPI.getScraperStats();
+          if (result.success) {
+            this.addLog('info', `📊 Scraper Stats: ${result.stats.successRate.toFixed(1)}% success rate`);
+            this.addLog('info', `   Total fingerprints: ${result.stats.totalFingerprints}`);
+            this.addLog('info', `   Auto-heals: ${result.stats.autoHeals}`);
+            return result.stats;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to get scraper stats:', error);
+      }
+      return null;
+    },
+    
+    // 🐉 NEW: Rotate fingerprint manually
+    async rotateFingerprint() {
+      try {
+        if (window.electronAPI && window.electronAPI.rotateFingerprint) {
+          const result = await window.electronAPI.rotateFingerprint(this.currentScraperId);
+          if (result.success) {
+            this.addLog('info', '🎭 Fingerprint rotated successfully');
+          }
+        }
+      } catch (error) {
+        this.addLog('error', `Fingerprint rotation failed: ${error.message}`);
+      }
+    },
+    
+    // 🐉 NEW: Export Beast Mode config
+    exportBeastModeConfig() {
+      const config = {
+        stealthMode: this.scrapingConfig.stealthMode,
+        selfHealing: this.scrapingConfig.selfHealing,
+        humanization: this.scrapingConfig.humanization,
+        requestDelay: this.scrapingConfig.requestDelay,
+        canvasNoise: this.scrapingConfig.canvasNoise,
+        audioSpoofing: this.scrapingConfig.audioSpoofing,
+        webGLSpoofing: this.scrapingConfig.webGLSpoofing,
+        timestamp: new Date().toISOString()
+      };
+      
+      const dataStr = JSON.stringify(config, null, 2);
+      this.downloadFile(dataStr, `beast-mode-config-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+      this.addLog('success', 'Beast Mode configuration exported');
+    },
+    
+    // 🐉 NEW: Import Beast Mode config
+    importBeastModeConfig(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const config = JSON.parse(e.target.result);
+          
+          // Apply imported config
+          Object.keys(config).forEach(key => {
+            if (this.scrapingConfig.hasOwnProperty(key)) {
+              this.scrapingConfig[key] = config[key];
+            }
+          });
+          
+          this.addLog('success', 'Beast Mode configuration imported');
+          event.target.value = ''; // Reset file input
+        } catch (error) {
+          this.addLog('error', 'Failed to import configuration');
+        }
+      };
+      reader.readAsText(file);
+    },
+    
+    // 🐉 NEW: Toggle Beast Mode settings panel
+    toggleBeastModeSettings() {
+      this.showBeastModeSettings = !this.showBeastModeSettings;
+      if (this.showBeastModeSettings) {
+        this.addLog('info', 'Beast Mode settings panel opened');
+      }
+    },
+    
+    // 🐉 NEW: Toggle debug panel
+    toggleDebugPanel() {
+      this.showDebugPanel = !this.showDebugPanel;
+      if (this.showDebugPanel) {
+        this.addLog('info', 'Debug panel opened');
+      }
+    },
+    
+    // 🐉 NEW: Quick test with current settings
+    async quickTest() {
+      const originalQuery = this.scrapingConfig.query;
+      const originalMaxResults = this.scrapingConfig.maxResults;
+      
+      this.scrapingConfig.query = 'test';
+      this.scrapingConfig.maxResults = 5;
+      
+      this.addLog('info', 'Running quick test...');
+      await this.startScraping();
+      
+      // Restore original values after a delay
+      setTimeout(() => {
+        this.scrapingConfig.query = originalQuery;
+        this.scrapingConfig.maxResults = originalMaxResults;
+      }, 1000);
+    },
+
     async loadProxyGroups() {
       try {
         if (window.electronAPI && window.electronAPI.getProxyGroups) {

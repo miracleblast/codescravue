@@ -348,6 +348,7 @@
                 <option value="github">GitHub</option>
                 <option value="gitlab">GitLab</option>
                 <option value="bitbucket">Bitbucket</option>
+                <option value="codepen">CodePen</option>
                 <option value="stackoverflow">Stack Overflow</option>
               </select>
             </div>
