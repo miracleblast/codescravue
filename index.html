@@ -6,27 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeScraper Pro - Solar Projects Chad 🇹🇩</title>
     
-    <!-- ✅ Content Security Policy for Electron -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self' https:;
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.iconify.design;
-      style-src 'self' 'unsafe-inline';
-      font-src 'self' data:;
-      img-src 'self' data: https:;
-      connect-src 'self' https://localhost:3000 https://api.github.com https://gitlab.com https://stackoverflow.com https://code.iconify.design;
-    ">
+   
     
-    <!-- ✅ Iconify CDN -->
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <!-- ✅ Iconify Locally -->
+     <script src="/assets/iconify-icon.min.js"></script>
     
     <style>
       /* Loading fonts from local files - no CDN */
-      @font-face {
-        font-family: 'Poppins';
-        src: url('/fonts/poppins-regular-webfont.woff2') format('woff2');
-        font-weight: normal;
-        font-style: normal;
-      }
+     @font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/poppins-regular-webfont.woff2') format('woff2'),
+       url('/fonts/poppins-regular-webfont.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
       
       body {
         margin: 0;

@@ -318,7 +318,7 @@ class ProductionScraper {
 }
 
 // 🚀 SIMPLIFIED WINDOW CREATION THAT WILL DEFINITELY WORK
-function createWindow() {
+async function createWindow() {
   console.log('🚀 Creating main window...');
   
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -338,9 +338,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      webSecurity: false, // Keep this true for security
+      webSecurity: false, // 🔥 TEMPORARY for testing
       preload: path.join(__dirname, 'preload.js'),
-      // Allow loading external resources
       webviewTag: false,
       safeDialogs: true
     },
@@ -358,24 +357,36 @@ function createWindow() {
     maximizable: true
   });
 
-   // Allow ALL external resources for development
-  mainWindow.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
-    callback({ requestHeaders: details.requestHeaders });
-  });
-
+  // 🔥 CRITICAL: CSP MODIFICATION MUST BE HERE
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = {
-      ...details.responseHeaders,
-      'Access-Control-Allow-Origin': ['*'],
-      'Access-Control-Allow-Credentials': ['true']
-    };
-    callback({ responseHeaders });
+    console.log('📡 Request URL:', details.url);
+    
+    if (details.url.startsWith('https://localhost:3000')) {
+      const responseHeaders = {
+        ...details.responseHeaders,
+        'content-security-policy': [
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:3000 https:; " +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:3000 https: blob:; " +
+          "style-src 'self' 'unsafe-inline' https://localhost:3000; " + // 🔥 REMOVED fonts.googleapis.com
+          "font-src 'self' data: https://localhost:3000; " + // 🔥 REMOVED fonts.gstatic.com
+          "img-src 'self' data: blob: https:; " +
+          "connect-src 'self' https://localhost:3000 wss://localhost:3000; " + // 🔥 REMOVED external APIs
+          "frame-src 'none'; " +
+          "object-src 'none';"
+        ]
+      };
+      
+      console.log('🔧 CSP headers modified for:', details.url);
+      callback({ responseHeaders });
+    } else {
+      callback({ responseHeaders: details.responseHeaders });
+    }
   });
 
-    // Disable SSL verification
+  // ✅ Disable SSL verification (keep this)
   mainWindow.webContents.session.setCertificateVerifyProc(() => {
     console.log('🔓 Trusting all certificates for development');
-    return 0; // Trust everything
+    return 0;
   });
 
   const viteDevServer = 'https://localhost:3000';
@@ -521,6 +532,7 @@ app.whenReady().then(async () => {
     }
   }, 2000);
 });
+
 
 app.on('window-all-closed', () => {
   console.log('❌ All windows closed');
