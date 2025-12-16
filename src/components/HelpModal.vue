@@ -4,14 +4,14 @@
       <!-- Header -->
       <div class="modal-header">
         <div class="header-content">
-          <iconify-icon icon="material-symbols:help" class="header-icon"></iconify-icon>
+          <LocalIcon icon="material-symbols:help" class="header-icon"></LocalIcon>
           <div>
             <h2>CodeScraper Pro Help & Guide</h2>
             <p>Everything you need to master code scraping</p>
           </div>
         </div>
         <button class="btn-icon close-btn" @click="$emit('close')">
-          <iconify-icon icon="material-symbols:close"></iconify-icon>
+          <LocalIcon icon="material-symbols:close"></LocalIcon>
         </button>
       </div>
 
@@ -20,7 +20,7 @@
         <!-- Sidebar Navigation -->
         <nav class="help-sidebar">
           <div class="search-box">
-            <iconify-icon icon="material-symbols:search"></iconify-icon>
+            <LocalIcon icon="material-symbols:search"></LocalIcon>
             <input 
               v-model="searchQuery" 
               type="text" 
@@ -36,12 +36,12 @@
                 :class="{ active: activeSection === 'license-privacy' }"
                 @click="activeSection = 'license-privacy'"
               >
-                <iconify-icon icon="material-symbols:lock"></iconify-icon>
+                <LocalIcon icon="material-symbols:lock"></LocalIcon>
                 License & Privacy
-                <iconify-icon 
+                <LocalIcon 
                   :icon="activeSection === 'license-privacy' ? 'material-symbols:expand-less' : 'material-symbols:expand-more'"
                   class="chevron"
-                ></iconify-icon>
+                ></LocalIcon>
               </button>
               
               <div v-if="activeSection === 'license-privacy'" class="nav-items">
@@ -86,12 +86,12 @@
                 :class="{ active: activeSection === section.id }"
                 @click="activeSection = section.id"
               >
-                <iconify-icon :icon="section.icon"></iconify-icon>
+                <LocalIcon :icon="section.icon"></LocalIcon>
                 {{ section.title }}
-                <iconify-icon 
+                <LocalIcon 
                   :icon="activeSection === section.id ? 'material-symbols:expand-less' : 'material-symbols:expand-more'"
                   class="chevron"
-                ></iconify-icon>
+                ></LocalIcon>
               </button>
               
               <div v-if="activeSection === section.id" class="nav-items">
@@ -116,11 +116,11 @@
             
             <div class="article-meta">
               <div class="meta-item">
-                <iconify-icon icon="material-symbols:update"></iconify-icon>
+                <LocalIcon icon="material-symbols:update"></LocalIcon>
                 Last updated: {{ activeArticleContent.lastUpdated }}
               </div>
               <div class="meta-item">
-                <iconify-icon icon="material-symbols:visibility"></iconify-icon>
+                <LocalIcon icon="material-symbols:visibility"></LocalIcon>
                 {{ activeArticleContent.difficulty }}
               </div>
             </div>
@@ -143,7 +143,7 @@
                   <div class="code-header">
                     <span>{{ block.language }}</span>
                     <button class="btn-icon" @click="copyCode(block.code)">
-                      <iconify-icon icon="material-symbols:content-copy"></iconify-icon>
+                      <LocalIcon icon="material-symbols:content-copy"></LocalIcon>
                     </button>
                   </div>
                   <pre><code>{{ block.code }}</code></pre>
@@ -151,7 +151,7 @@
                 
                 <!-- Tip -->
                 <div v-else-if="block.type === 'tip'" class="tip-block">
-                  <iconify-icon icon="material-symbols:lightbulb"></iconify-icon>
+                  <LocalIcon icon="material-symbols:lightbulb"></LocalIcon>
                   <div>
                     <strong>Pro Tip:</strong> {{ block.text }}
                   </div>
@@ -159,7 +159,7 @@
                 
                 <!-- Warning -->
                 <div v-else-if="block.type === 'warning'" class="warning-block">
-                  <iconify-icon icon="material-symbols:warning"></iconify-icon>
+                  <LocalIcon icon="material-symbols:warning"></LocalIcon>
                   <div>
                     <strong>Important:</strong> {{ block.text }}
                   </div>
@@ -173,7 +173,7 @@
                     class="feature-item"
                     :class="feature.type"
                   >
-                    <iconify-icon :icon="getFeatureIcon(feature.type)"></iconify-icon>
+                    <LocalIcon icon="getFeatureIcon(feature.type)"></LocalIcon>
                     <div class="feature-content">
                       <strong>{{ feature.title }}</strong>
                       <p>{{ feature.description }}</p>
@@ -184,7 +184,7 @@
                 <!-- Mission Block -->
                 <div v-else-if="block.type === 'mission'" class="mission-block">
                   <div class="mission-header">
-                    <iconify-icon :icon="block.icon" class="mission-icon"></iconify-icon>
+                    <LocalIcon :icon="block.icon" class="mission-icon"></LocalIcon>
                     <h3>{{ block.title }}</h3>
                   </div>
                   <p>{{ block.description }}</p>
@@ -227,7 +227,7 @@
                 class="btn btn-outline"
                 @click="setActiveArticle(previousArticle.id)"
               >
-                <iconify-icon icon="material-symbols:arrow-back"></iconify-icon>
+                <LocalIcon icon="material-symbols:arrow-back"></LocalIcon>
                 {{ previousArticle.title }}
               </button>
               
@@ -237,7 +237,7 @@
                 @click="setActiveArticle(nextArticle.id)"
               >
                 {{ nextArticle.title }}
-                <iconify-icon icon="material-symbols:arrow-forward"></iconify-icon>
+                <LocalIcon icon="material-symbols:arrow-forward"></LocalIcon>
               </button>
             </div>
           </div>
@@ -245,7 +245,7 @@
           <!-- Search Results / Welcome -->
           <div v-else class="welcome-content">
             <div class="welcome-header">
-              <iconify-icon icon="material-symbols:help-center" class="welcome-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:help-center" class="welcome-icon"></LocalIcon>
               <h1>How can we help you?</h1>
               <p>Search our documentation or browse by category</p>
             </div>
@@ -254,7 +254,7 @@
             <div class="humanitarian-banner">
               <div class="banner-content">
                 <div class="banner-icon">
-                  <iconify-icon icon="material-symbols:solar-power"></iconify-icon>
+                  <LocalIcon icon="material-symbols:solar-power"></LocalIcon>
                 </div>
                 <div class="banner-text">
                   <h3>🌞🇹🇩 100% of Profits Fund Solar Energy for Chad</h3>
@@ -269,25 +269,25 @@
             <!-- Quick Actions -->
             <div class="quick-help-actions">
               <div class="help-card" @click="setActiveArticle('getting-started')">
-                <iconify-icon icon="material-symbols:rocket-launch"></iconify-icon>
+                <LocalIcon icon="material-symbols:rocket-launch"></LocalIcon>
                 <h3>Getting Started</h3>
                 <p>New to CodeScraper? Start here</p>
               </div>
               
               <div class="help-card" @click="setActiveArticle('privacy-first')">
-                <iconify-icon icon="material-symbols:lock"></iconify-icon>
+                <LocalIcon icon="material-symbols:lock"></LocalIcon>
                 <h3>Privacy First</h3>
                 <p>No tracking, no data collection</p>
               </div>
               
               <div class="help-card" @click="setActiveArticle('troubleshooting')">
-                <iconify-icon icon="material-symbols:bug-report"></iconify-icon>
+                <LocalIcon icon="material-symbols:bug-report"></LocalIcon>
                 <h3>Troubleshooting</h3>
                 <p>Common issues and solutions</p>
               </div>
               
               <div class="help-card" @click="contactSupport">
-                <iconify-icon icon="material-symbols:contact-support"></iconify-icon>
+                <LocalIcon icon="material-symbols:contact-support"></LocalIcon>
                 <h3>Contact Support</h3>
                 <p>Get help from us</p>
               </div>
@@ -706,29 +706,29 @@ export default {
   border-left-color: #FF6B35; /* Humanitarian orange */
 }
 
-.feature-item iconify-icon {
+.feature-item LocalIcon {
   font-size: 1.25rem;
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
 
-.feature-item.success iconify-icon {
+.feature-item.success LocalIcon {
   color: var(--success);
 }
 
-.feature-item.info iconify-icon {
+.feature-item.info LocalIcon {
   color: var(--primary);
 }
 
-.feature-item.warning iconify-icon {
+.feature-item.warning LocalIcon {
   color: var(--warning);
 }
 
-.feature-item.crypto iconify-icon {
+.feature-item.crypto LocalIcon {
   color: var(--secondary);
 }
 
-.feature-item.humanitarian iconify-icon {
+.feature-item.humanitarian LocalIcon {
   color: #FF6B35;
 }
 

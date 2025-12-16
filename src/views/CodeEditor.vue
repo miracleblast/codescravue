@@ -2,7 +2,7 @@
   <div class="code-editor-tab">
     <!-- Header Section -->
     <div class="tab-header">
-      <h1><iconify-icon icon="ion:code-slash"></iconify-icon> Code Editor & Runner</h1>
+      <h1><LocalIcon icon="ion:code-slash"></LocalIcon> Code Editor & Runner</h1>
       <p>Edit and manage your scraped code with syntax highlighting, advanced file editing with built-in code preview and execution</p>
     </div>
 
@@ -10,7 +10,7 @@
     <div class="editor-stats-grid">
       <div class="stat-card" v-for="stat in editorStats" :key="stat.id" :class="stat.class">
         <div class="stat-icon">
-          <iconify-icon :icon="stat.icon"></iconify-icon>
+          <LocalIcon :icon="stat.icon"></LocalIcon>
         </div>
         <div class="stat-content">
           <h3>{{ stat.value }}</h3>
@@ -24,12 +24,12 @@
       <div class="toggle-buttons">
         <button class="toggle-btn" :class="{ active: currentMode === 'advanced' }" 
                 @click="currentMode = 'advanced'">
-          <iconify-icon icon="material-symbols:code-blocks"></iconify-icon>
+          <LocalIcon icon="material-symbols:code-blocks"></LocalIcon>
           Advanced Editor
         </button>
         <button class="toggle-btn" :class="{ active: currentMode === 'simple' }" 
                 @click="currentMode = 'simple'">
-          <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+          <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
           Quick Runner
         </button>
       </div>
@@ -45,13 +45,13 @@
             <h3>File Explorer</h3>
             <div class="sidebar-actions">
               <button class="btn-icon" @click="refreshFiles" title="Refresh">
-                <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                <LocalIcon icon="material-symbols:refresh"></LocalIcon>
               </button>
               <button class="btn-icon" @click="createNewFile" title="New File">
-                <iconify-icon icon="material-symbols:add"></iconify-icon>
+                <LocalIcon icon="material-symbols:add"></LocalIcon>
               </button>
               <button class="btn-icon" @click="createNewFolder" title="New Folder">
-                <iconify-icon icon="material-symbols:create-new-folder"></iconify-icon>
+                <LocalIcon icon="material-symbols:create-new-folder"></LocalIcon>
               </button>
             </div>
           </div>
@@ -60,7 +60,7 @@
           <div class="file-tree">
             <div class="tree-header">
               <div class="tree-search">
-                <iconify-icon icon="material-symbols:search" class="search-icon"></iconify-icon>
+                <LocalIcon icon="material-symbols:search" class="search-icon"></LocalIcon>
                 <input type="text" v-model="fileSearch" placeholder="Search files..." class="search-input">
               </div>
             </div>
@@ -85,7 +85,7 @@
               <div v-for="file in recentFiles" :key="file.path" 
                    class="recent-item" :class="{ active: currentFile?.path === file.path }"
                    @click="selectFile(file)">
-                <iconify-icon :icon="getFileIcon(file.name)"></iconify-icon>
+                <LocalIcon icon="getFileIcon(file.name)"></LocalIcon>
                 <span class="recent-name">{{ file.name }}</span>
                 <span class="recent-path">{{ getRelativePath(file.path) }}</span>
               </div>
@@ -100,10 +100,10 @@
             <div v-for="tab in openTabs" :key="tab.path" 
                  class="editor-tab" :class="{ active: currentFile?.path === tab.path }"
                  @click="selectFile(tab)">
-              <iconify-icon :icon="getFileIcon(tab.name)"></iconify-icon>
+              <LocalIcon icon="getFileIcon(tab.name)"></LocalIcon>
               <span class="tab-name">{{ tab.name }}</span>
               <button class="tab-close" @click.stop="closeTab(tab)">
-                <iconify-icon icon="material-symbols:close"></iconify-icon>
+                <LocalIcon icon="material-symbols:close"></LocalIcon>
               </button>
             </div>
           </div>
@@ -119,19 +119,19 @@
               
               <div class="toolbar-buttons">
                 <button class="btn-icon" @click="saveFile" :disabled="!currentFile" title="Save (Ctrl+S)">
-                  <iconify-icon icon="material-symbols:save"></iconify-icon>
+                  <LocalIcon icon="material-symbols:save"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="formatCode" :disabled="!currentFile" title="Format Code">
-                  <iconify-icon icon="material-symbols:format_ink_highlighter"></iconify-icon>
+                  <LocalIcon icon="material-symbols:format-ink-highlighter"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="findInFile" title="Find (Ctrl+F)">
-                  <iconify-icon icon="material-symbols:search"></iconify-icon>
+                  <LocalIcon icon="material-symbols:search"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="toggleComment" :disabled="!currentFile" title="Toggle Comment">
-                  <iconify-icon icon="material-symbols:format_quote"></iconify-icon>
+                  <LocalIcon icon="material-symbols:format-quote"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="togglePreview" :title="showPreview ? 'Hide Preview' : 'Show Preview'">
-                  <iconify-icon :icon="showPreview ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></iconify-icon>
+                  <LocalIcon :icon="showPreview ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></LocalIcon>
                 </button>
               </div>
             </div>
@@ -144,16 +144,16 @@
               
               <div class="toolbar-buttons">
                 <button class="btn-icon" @click="toggleSidebar" title="Toggle Sidebar">
-                  <iconify-icon icon="material-symbols:sidebar"></iconify-icon>
+                  <LocalIcon icon="mdi:sidebar"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="toggleTheme" :title="`Switch to ${isDarkTheme ? 'light' : 'dark'} theme`">
-                  <iconify-icon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></iconify-icon>
+                  <LocalIcon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="zoomOut" title="Zoom Out">
-                  <iconify-icon icon="material-symbols:zoom-out"></iconify-icon>
+                  <LocalIcon icon="material-symbols:zoom-out"></LocalIcon>
                 </button>
                 <button class="btn-icon" @click="zoomIn" title="Zoom In">
-                  <iconify-icon icon="material-symbols:zoom-in"></iconify-icon>
+                  <LocalIcon icon="material-symbols:zoom-in"></LocalIcon>
                 </button>
               </div>
             </div>
@@ -225,13 +225,13 @@
                 <h4>Live Preview</h4>
                 <div class="preview-actions">
                   <button class="btn-icon" @click="refreshPreview" title="Refresh Preview">
-                    <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                    <LocalIcon icon="material-symbols:refresh"></LocalIcon>
                   </button>
                   <button class="btn-icon" @click="openInNewWindow" title="Open in New Window">
-                    <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                    <LocalIcon icon="material-symbols:open-in-new"></LocalIcon>
                   </button>
                   <button class="btn-icon" @click="togglePreview" title="Close Preview">
-                    <iconify-icon icon="material-symbols:close"></iconify-icon>
+                    <LocalIcon icon="material-symbols:close"></LocalIcon>
                   </button>
                 </div>
               </div>
@@ -248,7 +248,7 @@
                 <!-- Default Preview for other file types -->
                 <div v-else class="default-preview">
                   <div class="preview-placeholder">
-                    <iconify-icon icon="material-symbols:code" class="preview-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:code" class="preview-icon"></LocalIcon>
                     <h3>Live Preview</h3>
                     <p>Preview is available for HTML files</p>
                   </div>
@@ -306,7 +306,7 @@
               </div>
             </div>
             <div v-else class="no-file-selected">
-              <iconify-icon icon="material-symbols:code-off" class="no-file-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:code-off" class="no-file-icon"></LocalIcon>
               <p>No file selected</p>
             </div>
           </div>
@@ -317,13 +317,13 @@
               <div v-for="item in fileOutline" :key="item.name" 
                    class="outline-item" :class="`outline-${item.type}`"
                    @click="goToLine(item.line)">
-                <iconify-icon :icon="getOutlineIcon(item.type)"></iconify-icon>
+                <LocalIcon icon="getOutlineIcon(item.type)"></LocalIcon>
                 <span class="outline-name">{{ item.name }}</span>
                 <span class="outline-line">Ln {{ item.line }}</span>
               </div>
             </div>
             <div v-else class="no-file-selected">
-              <iconify-icon icon="material-symbols:list-alt" class="no-file-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:list-alt" class="no-file-icon"></LocalIcon>
               <p>No file selected</p>
             </div>
           </div>
@@ -334,7 +334,7 @@
               <input type="text" v-model="searchQuery" placeholder="Search in file..." 
                      class="search-input" @keyup.enter="performSearch">
               <button class="btn btn-primary" @click="performSearch">
-                <iconify-icon icon="material-symbols:search"></iconify-icon>
+                <LocalIcon icon="material-symbols:search"></LocalIcon>
               </button>
             </div>
             
@@ -342,7 +342,7 @@
               <div class="results-header">
                 <span>{{ searchResults.length }} results</span>
                 <button class="btn-icon" @click="clearSearch">
-                  <iconify-icon icon="material-symbols:clear"></iconify-icon>
+                  <LocalIcon icon="material-symbols:close"></LocalIcon>
                 </button>
               </div>
               <div v-for="result in searchResults" :key="result.line" 
@@ -360,7 +360,7 @@
     <div v-if="currentMode === 'simple'" class="simple-runner-mode">
       <section class="code-editor-section">
         <h2 class="section-title">
-          <iconify-icon class="section-title-icon" icon="material-symbols:code-blocks"></iconify-icon>
+          <LocalIcon class="section-title-icon" icon="material-symbols:code-blocks"></LocalIcon>
           Code Editor & Preview
         </h2>
         
@@ -369,11 +369,11 @@
             <div class="editor-title">Code Editor</div>
             <div class="editor-actions">
               <button class="btn btn-outline" @click="clearSimpleCode" style="padding: 0.5rem;">
-                <iconify-icon icon="material-symbols:clear"></iconify-icon>
+                <LocalIcon icon="material-symbols:close"></LocalIcon>
                 Clear
               </button>
               <button class="btn btn-primary" @click="runSimpleCode" style="padding: 0.5rem;">
-                <iconify-icon class="btn-icon" icon="material-symbols:play-arrow"></iconify-icon>
+                <LocalIcon class="btn-icon" icon="material-symbols:play-arrow"></LocalIcon>
                 Run Code
               </button>
             </div>
@@ -390,10 +390,10 @@
                 Preview
                 <div class="output-actions">
                   <button class="btn-icon" @click="refreshSimplePreview" title="Refresh">
-                    <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                    <LocalIcon icon="material-symbols:refresh"></LocalIcon>
                   </button>
                   <button class="btn-icon" @click="openSimpleInNewWindow" title="Open in New Window">
-                    <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+                    <LocalIcon icon="material-symbols:open-in-new"></LocalIcon>
                   </button>
                 </div>
               </div>
@@ -406,7 +406,7 @@
                   :srcdoc="generateSimplePreviewHtml()"
                 ></iframe>
                 <div v-else class="no-code-placeholder">
-                  <iconify-icon icon="material-symbols:code" class="placeholder-icon"></iconify-icon>
+                  <LocalIcon icon="material-symbols:code" class="placeholder-icon"></LocalIcon>
                   <p style="color: var(--text-secondary); text-align: center; margin-top: 2rem;">
                     Code output will appear here after running
                   </p>
@@ -420,14 +420,14 @@
       <!-- Code Templates -->
       <div class="code-templates-section">
         <h3 class="section-title">
-          <iconify-icon class="section-title-icon" icon="material-symbols:library-books"></iconify-icon>
+          <LocalIcon class="section-title-icon" icon="material-symbols:library-books"></LocalIcon>
           Quick Templates
         </h3>
         
         <div class="templates-grid">
           <div class="template-card" @click="loadTemplate('html-basic')">
             <div class="template-icon">
-              <iconify-icon icon="material-symbols:html"></iconify-icon>
+              <LocalIcon icon="vscode-icons:file-type-html"></LocalIcon>
             </div>
             <h4>Basic HTML</h4>
             <p>Simple HTML page structure</p>
@@ -435,7 +435,7 @@
           
           <div class="template-card" @click="loadTemplate('html-css-js')">
             <div class="template-icon">
-              <iconify-icon icon="material-symbols:code-blocks"></iconify-icon>
+              <LocalIcon icon="material-symbols:code-blocks"></LocalIcon>
             </div>
             <h4>HTML + CSS + JS</h4>
             <p>Complete web page with styling</p>
@@ -443,7 +443,7 @@
           
           <div class="template-card" @click="loadTemplate('bootstrap')">
             <div class="template-icon">
-              <iconify-icon icon="simple-icons:bootstrap"></iconify-icon>
+              <LocalIcon icon="simple-icons:bootstrap"></LocalIcon>
             </div>
             <h4>Bootstrap Template</h4>
             <p>Responsive Bootstrap layout</p>
@@ -451,7 +451,7 @@
           
           <div class="template-card" @click="loadTemplate('api-test')">
             <div class="template-icon">
-              <iconify-icon icon="material-symbols:api"></iconify-icon>
+              <LocalIcon icon="material-symbols:api"></LocalIcon>
             </div>
             <h4>API Test</h4>
             <p>Fetch API testing template</p>
@@ -466,7 +466,7 @@
         <div class="modal-header">
           <h3>Find & Replace</h3>
           <button class="btn-close" @click="closeFindModal">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         <div class="modal-body">
@@ -503,12 +503,12 @@
         <div class="modal-footer">
           <div class="find-buttons">
             <button class="btn btn-secondary" @click="findPrevious">
-              <iconify-icon icon="material-symbols:arrow-upward"></iconify-icon>
+              <LocalIcon icon="material-symbols:arrow-upward"></LocalIcon>
               Previous
             </button>
             <button class="btn btn-secondary" @click="findNext">
               Next
-              <iconify-icon icon="material-symbols:arrow-downward"></iconify-icon>
+              <LocalIcon icon="material-symbols:arrow-downward"></LocalIcon>
             </button>
             <button class="btn btn-primary" @click="replaceNext">
               Replace
@@ -527,7 +527,7 @@
         <div class="modal-header">
           <h3>Create New File</h3>
           <button class="btn-close" @click="closeNewFileModal">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         <div class="modal-body">
@@ -617,8 +617,8 @@ const FileTreeNode = {
       <div class="node-content" :class="{ selected: isSelected, file: isFile, folder: !isFile }"
            @click="handleClick" @dblclick="startRename">
         <div class="node-icon">
-          <iconify-icon v-if="!isFile" :icon="isExpanded ? 'material-symbols:folder-open' : 'material-symbols:folder'"></iconify-icon>
-          <iconify-icon v-else :icon="getFileIcon(node.name)"></iconify-icon>
+          <LocalIcon v-if="!isFile" :icon="isExpanded ? 'material-symbols:folder-open' : 'material-symbols:folder'"></LocalIcon>
+          <LocalIcon v-else icon="getFileIcon(node.name)"></LocalIcon>
         </div>
         
         <div class="node-name" v-if="!isRenaming">
@@ -631,10 +631,10 @@ const FileTreeNode = {
         
         <div class="node-actions" v-if="!isRenaming">
           <button class="btn-icon" @click.stop="startRename" title="Rename">
-            <iconify-icon icon="material-symbols:edit"></iconify-icon>
+            <LocalIcon icon="material-symbols:edit"></LocalIcon>
           </button>
           <button class="btn-icon btn-danger" @click.stop="$emit('delete', node)" title="Delete">
-            <iconify-icon icon="material-symbols:delete"></iconify-icon>
+            <LocalIcon icon="material-symbols:delete"></LocalIcon>
           </button>
         </div>
       </div>
@@ -658,14 +658,14 @@ const FileTreeNode = {
 function getFileIcon(fileName) {
   const extension = fileName.split('.').pop()?.toLowerCase()
   const iconMap = {
-    js: 'material-symbols:javascript',
-    ts: 'material-symbols:typescript',
-    html: 'material-symbols:html',
-    css: 'material-symbols:css',
-    py: 'material-symbols:python',
-    java: 'material-symbols:java',
-    json: 'material-symbols:json',
-    md: 'material-symbols:markdown',
+    js: 'vscode-icons:file-type-javascript',
+    ts: 'vscode-icons:file-type-typescript',
+    html: 'vscode-icons:file-type-html',
+    css: 'vscode-icons:file-type-css',
+    py: 'vscode-icons:file-type-python',
+    java: 'vscode-icons:file-type-java',
+    json: 'vscode-icons:file-type-json',
+    md: 'vscode-icons:file-type-markdown',
     txt: 'material-symbols:description'
   }
   return iconMap[extension] || 'material-symbols:description'
@@ -725,7 +725,7 @@ export default {
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to CodeScraper Pro!</h1>
+        <h1>Welcome to CodeHarvest Studio!</h1>
         <p>This is a test page running in the built-in code editor.</p>
         <button onclick="showMessage()">Click Me!</button>
         <div id="output"></div>

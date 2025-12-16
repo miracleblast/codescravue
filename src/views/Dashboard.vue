@@ -5,11 +5,11 @@
       <h1 class="page-title">Code Discovery Dashboard</h1>
       <div class="header-actions">
         <button class="btn btn-outline" @click="showHelp = true">
-          <iconify-icon class="btn-icon" icon="majesticons:question-mark-circle-line"></iconify-icon>
+          <LocalIcon class="btn-icon" icon="majesticons:question-mark-circle-line"></LocalIcon>
           Help
         </button>
         <button class="btn btn-primary" @click="startScraping">
-          <iconify-icon class="btn-icon" icon="material-symbols:rocket-launch-rounded"></iconify-icon>
+          <LocalIcon class="btn-icon" icon="material-symbols:rocket-launch-rounded"></LocalIcon>
           Start Scraping
         </button>
       </div>
@@ -18,12 +18,12 @@
     <!-- License Info -->
     <section class="license-info-section">
       <h2 class="section-title">
-        <iconify-icon class="section-title-icon" icon="material-symbols:key"></iconify-icon>
+        <LocalIcon class="section-title-icon" icon="material-symbols:key"></LocalIcon>
         License Information
       </h2>
       
       <div class="license-status">
-        <iconify-icon class="license-status-icon" icon="material-symbols:check-circle"></iconify-icon>
+        <LocalIcon class="license-status-icon" icon="material-symbols:check-circle"></LocalIcon>
         <div class="license-details">
           <div class="license-type">{{ licenseInfo.type }}</div>
           <div class="license-expiry">{{ licenseInfo.expiry }}</div>
@@ -53,7 +53,7 @@
       </div>
       
       <button class="btn btn-outline" @click="changeLicense">
-        <iconify-icon class="btn-icon" icon="material-symbols:key"></iconify-icon>
+        <LocalIcon class="btn-icon" icon="material-symbols:key"></LocalIcon>
         Change License Key
       </button>
     </section>
@@ -64,7 +64,7 @@
         <div class="card-header">
           <h3 class="card-title">Scraping Status</h3>
           <div class="card-icon icon-scraper">
-            <iconify-icon icon="iconamoon:cloud-download-light"></iconify-icon>
+            <LocalIcon icon="iconamoon:cloud-download-light"></LocalIcon>
           </div>
         </div>
         <div class="card-value">{{ formatNumber(stats.totalScrapes) }}</div>
@@ -78,7 +78,7 @@
         <div class="card-header">
           <h3 class="card-title">Storage Usage</h3>
           <div class="card-icon icon-storage">
-            <iconify-icon icon="solar:folder-with-files-linear"></iconify-icon>
+            <LocalIcon icon="solar:folder-with-files-linear"></LocalIcon>
           </div>
         </div>
         <div class="card-value">{{ storageUsage.percentage }}%</div>
@@ -92,7 +92,7 @@
         <div class="card-header">
           <h3 class="card-title">Proxy Status</h3>
           <div class="card-icon icon-proxy">
-            <iconify-icon icon="material-symbols:security"></iconify-icon>
+            <LocalIcon icon="material-symbols:security"></LocalIcon>
           </div>
         </div>
         <div class="card-value">{{ proxyStats.active }}/{{ proxyStats.total }}</div>
@@ -106,7 +106,7 @@
         <div class="card-header">
           <h3 class="card-title">Account Status</h3>
           <div class="card-icon icon-account">
-            <iconify-icon icon="material-symbols:person"></iconify-icon>
+            <LocalIcon icon="material-symbols:person"></LocalIcon>
           </div>
         </div>
         <div class="card-value">{{ accountStats.active }}/{{ accountStats.total }}</div>
@@ -120,7 +120,7 @@
     <!-- Quick Scraper Configuration -->
     <section class="scraper-config">
       <h2 class="section-title">
-        <iconify-icon class="section-title-icon" icon="iconamoon:cloud-download-light"></iconify-icon>
+        <LocalIcon class="section-title-icon" icon="iconamoon:cloud-download-light"></LocalIcon>
         Quick Code Search
       </h2>
       
@@ -150,7 +150,7 @@
       </div>
       
       <button class="btn btn-primary" @click="startQuickSearch" style="margin-top: 1rem;">
-        <iconify-icon class="btn-icon" icon="iconamoon:cloud-download-light"></iconify-icon>
+        <LocalIcon class="btn-icon" icon="iconamoon:cloud-download-light"></LocalIcon>
         Start Quick Search
       </button>
     </section>
@@ -159,7 +159,7 @@
     <section class="results-section">
       <div class="results-header">
         <h2 class="section-title">
-          <iconify-icon class="section-title-icon" icon="material-symbols:code"></iconify-icon>
+          <LocalIcon class="section-title-icon" icon="material-symbols:code"></LocalIcon>
           Recently Scraped Code
         </h2>
         <div class="filter-controls">
@@ -188,24 +188,24 @@
           @click="viewResult(result)"
         >
           <div class="result-preview" :class="result.platform">
-            <iconify-icon :icon="getPlatformIcon(result.platform)" style="font-size: 3rem;"></iconify-icon>
+            <LocalIcon icon="getPlatformIcon(result.platform)" style="font-size: 3rem;"></LocalIcon>
           </div>
           <div class="result-content">
             <h4 class="result-title">{{ result.title }}</h4>
             <div class="result-meta">
               <div class="result-source">
-                <iconify-icon class="source-icon" :icon="getPlatformIcon(result.platform)"></iconify-icon>
+                <LocalIcon class="source-icon" icon="getPlatformIcon(result.platform)"></LocalIcon>
                 {{ formatPlatform(result.platform) }}
               </div>
               <div>{{ formatDate(result.date) }}</div>
             </div>
             <div class="result-stats">
               <span class="result-stat">
-                <iconify-icon icon="material-symbols:code"></iconify-icon>
+                <LocalIcon icon="material-symbols:code"></LocalIcon>
                 {{ result.language || 'Multiple' }}
               </span>
               <span class="result-stat" v-if="result.lines">
-                <iconify-icon icon="material-symbols:format-list-numbered"></iconify-icon>
+                <LocalIcon icon="material-symbols:format-list-numbered"></LocalIcon>
                 {{ result.lines }} lines
               </span>
             </div>
@@ -217,7 +217,7 @@
           v-if="filteredResults.length === 0" 
           class="empty-state"
         >
-          <iconify-icon icon="material-symbols:code-off" style="font-size: 3rem; margin-bottom: 1rem;"></iconify-icon>
+          <LocalIcon icon="material-symbols:code-off" style="font-size: 3rem; margin-bottom: 1rem;"></LocalIcon>
           <h3>No Code Scraped Yet</h3>
           <p>Start your first scraping session to see results here.</p>
           <button class="btn btn-primary" @click="$router.push('/scraper')">
@@ -231,7 +231,7 @@
     <div v-if="showHelp" class="help-modal" id="helpModal">
       <div class="help-content">
         <button class="help-close" @click="showHelp = false">
-          <iconify-icon icon="material-symbols:close"></iconify-icon>
+          <LocalIcon icon="material-symbols:close"></LocalIcon>
         </button>
         <h2>Dashboard Help Guide</h2>
         
@@ -271,49 +271,52 @@
 </template>
 
 <script>
+import { dataFixer } from '@/utils/dataFixer';
+
 export default {
-  name: 'Dashboard',
   data() {
     return {
-      showHelp: false,
-      licenseInfo: {
-        type: 'Pro Plan - Active',
-        expiry: 'Expires: ',
-        key: 'XXXX-XXXX-XXXX-XXXX',
-        plan: 'Pro Plan',
-        scrapers: 'All Platforms'
-      },
-      stats: {
-        totalScrapes: 0,
-        successRate: 0
-      },
-      storageUsage: {
-        percentage: 0,
-        total: '0GB',
-        used: '0GB'
-      },
-      proxyStats: {
-        active: 0,
-        total: 0,
-        percentage: 0
-      },
-      accountStats: {
-        active: 0,
-        total: 0,
-        percentage: 0
-      },
+      // Core data properties
+      recentResults: [],
+      accountStats: {},
+      licenseInfo: {},
+      loading: true,
+      
+      // UI state properties
       quickSearch: {
         query: '',
         platform: 'all'
       },
       resultsFilter: {
         platform: 'all',
-        days: '7'
+        days: 'all'
       },
-      recentResults: []
-    }
+      
+      // Dashboard stats (initialize with defaults)
+      stats: {
+        totalScrapes: 0,
+        successRate: 0,
+        totalLines: 0,
+        totalFiles: 0
+      },
+      
+      // Storage and proxy stats
+      storageUsage: {
+        percentage: 0,
+        total: '500GB',
+        used: '0 B'
+      },
+      
+      proxyStats: {
+        total: 0,
+        active: 0,
+        percentage: 0
+      }
+    };
   },
+  
   computed: {
+    // Keep only computed property, remove method with same name
     filteredResults() {
       let results = this.recentResults;
       
@@ -326,96 +329,178 @@ export default {
       if (this.resultsFilter.days !== 'all') {
         const daysAgo = new Date();
         daysAgo.setDate(daysAgo.getDate() - parseInt(this.resultsFilter.days));
-        results = results.filter(result => new Date(result.date) >= daysAgo);
+        results = results.filter(result => {
+          const resultDate = result.date || result.timestamp || result.createdAt;
+          return new Date(resultDate) >= daysAgo;
+        });
       }
       
       return results;
     }
   },
+  
   async mounted() {
+    // Only one mounted hook
     await this.loadRealData();
-    this.initializeDashboard();
+    await this.initializeDashboard();
   },
+  
   methods: {
     async loadRealData() {
       try {
-        // Load real data from Electron API
-        if (window.electronAPI) {
-          const stats = await window.electronAPI.getDashboardStats();
-          if (stats) {
-            this.stats.totalScrapes = stats.totalScrapes || 0;
-            this.stats.successRate = stats.successRate || 0;
-          }
-
-          const storage = await window.electronAPI.getStorageInfo();
-          if (storage) {
-            this.storageUsage = storage;
-          }
-
-          const proxies = await window.electronAPI.getProxyStats();
-          if (proxies) {
-            this.proxyStats = proxies;
-          }
-
-          const accounts = await window.electronAPI.getAccountStats();
-          if (accounts) {
-            this.accountStats = accounts;
-          }
-
-          const results = await window.electronAPI.getRecentResults();
-          if (results) {
-            this.recentResults = results;
-          }
-
-          const license = await window.electronAPI.getLicenseInfo();
-          if (license) {
-            this.licenseInfo = license;
-          }
-        } else {
-          // Fallback to localStorage for browser testing
+        console.log('📊 Loading dashboard data...');
+        
+        // Check if electronAPI exists
+        if (!window.electronAPI) {
+          console.warn('electronAPI not available, using localStorage fallback');
           this.loadFromLocalStorage();
+          return;
         }
+        
+        // Load all data in parallel with fallbacks
+        const [
+          statsResponse,
+          storageResponse,
+          proxiesResponse,
+          accountsResponse,
+          resultsResponse,
+          licenseResponse
+        ] = await Promise.allSettled([
+          window.electronAPI.getDashboardStats?.() || Promise.resolve(null),
+          window.electronAPI.getStorageInfo?.() || Promise.resolve(null),
+          window.electronAPI.getProxyStats?.() || Promise.resolve(null),
+          window.electronAPI.getAccountStats?.() || Promise.resolve(null),
+          window.electronAPI.getRecentResults?.() || Promise.resolve([]),
+          window.electronAPI.getLicenseInfo?.() || Promise.resolve({})
+        ]);
+        
+        // Process stats
+        if (statsResponse.status === 'fulfilled' && statsResponse.value) {
+          this.stats = {
+            ...this.stats, // Keep defaults
+            ...statsResponse.value // Override with actual data
+          };
+        }
+        
+        // Process storage
+        if (storageResponse.status === 'fulfilled' && storageResponse.value) {
+          this.storageUsage = storageResponse.value;
+        } else {
+          // Calculate from recent results
+          this.updateStorageUsage();
+        }
+        
+        // Process proxy stats
+        if (proxiesResponse.status === 'fulfilled' && proxiesResponse.value) {
+          this.proxyStats = proxiesResponse.value;
+        }
+        
+        // Process account stats
+        if (accountsResponse.status === 'fulfilled' && accountsResponse.value) {
+          this.accountStats = accountsResponse.value;
+        }
+        
+        // Process recent results
+        if (resultsResponse.status === 'fulfilled') {
+          this.recentResults = dataFixer.ensureArray(resultsResponse.value);
+        }
+        
+        // Process license info
+        if (licenseResponse.status === 'fulfilled') {
+          this.licenseInfo = dataFixer.ensureObject(licenseResponse.value);
+        }
+        
+        console.log('✅ Dashboard data loaded successfully');
+        
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error('❌ Error loading dashboard data:', error);
         this.loadFromLocalStorage();
       }
     },
-
+    
     loadFromLocalStorage() {
-      // Fallback to localStorage for development
-      const storedStats = localStorage.getItem('codeScraperStats');
-      if (storedStats) {
-        const stats = JSON.parse(storedStats);
-        this.stats = stats;
+      console.log('📁 Loading from localStorage...');
+      
+      try {
+        // Load stats with safe defaults
+        const storedStats = localStorage.getItem('codeScraperStats');
+        if (storedStats) {
+          const parsedStats = JSON.parse(storedStats);
+          this.stats = {
+            ...this.stats,
+            ...parsedStats
+          };
+        }
+        
+        // Load recent results
+        const storedResults = localStorage.getItem('scrapingResults');
+        if (storedResults) {
+          this.recentResults = dataFixer.ensureArray(JSON.parse(storedResults));
+        }
+        
+        // Calculate proxy stats from stored data
+        const proxyGroups = JSON.parse(localStorage.getItem('codeScraperProxyGroups') || '[]');
+        this.proxyStats.total = proxyGroups.reduce((total, group) => {
+          return total + (Array.isArray(group[1]) ? group[1].length : 0);
+        }, 0);
+        this.proxyStats.active = Math.floor(this.proxyStats.total * 0.8);
+        this.proxyStats.percentage = this.proxyStats.total > 0 ? 
+          (this.proxyStats.active / this.proxyStats.total) * 100 : 0;
+        
+        // Calculate account stats from stored data
+        const accounts = JSON.parse(localStorage.getItem('codeScraperAccounts') || '[]');
+        this.accountStats.total = Array.isArray(accounts) ? accounts.length : 0;
+        this.accountStats.active = Array.isArray(accounts) ? 
+          accounts.filter(acc => acc.status === 'active').length : 0;
+        this.accountStats.percentage = this.accountStats.total > 0 ? 
+          (this.accountStats.active / this.accountStats.total) * 100 : 0;
+          
+        // Update storage usage
+        this.updateStorageUsage();
+        
+      } catch (error) {
+        console.error('❌ Error loading from localStorage:', error);
       }
-
-      const storedResults = localStorage.getItem('scrapingResults');
-      if (storedResults) {
-        this.recentResults = JSON.parse(storedResults);
+    },
+    
+    async initializeDashboard() {
+      try {
+        // Make sure all data is loaded
+        if (this.recentResults.length === 0 && window.electronAPI) {
+          // Try to get recent results specifically
+          const results = await window.electronAPI.getRecentResults?.();
+          if (results) {
+            this.recentResults = dataFixer.ensureArray(results);
+          }
+        }
+        
+        // Ensure all stats have values
+        if (!this.stats.totalScrapes) {
+          this.stats.totalScrapes = this.recentResults.length;
+        }
+        
+        if (!this.stats.successRate && this.recentResults.length > 0) {
+          this.stats.successRate = 85; // Default success rate
+        }
+        
+        console.log('✅ Dashboard initialized');
+        
+      } catch (error) {
+        console.error('❌ Dashboard init error:', error);
+      } finally {
+        this.loading = false;
       }
-
-      // Calculate proxy stats from stored data
-      const proxyGroups = JSON.parse(localStorage.getItem('codeScraperProxyGroups') || '[]');
-      this.proxyStats.total = proxyGroups.reduce((total, group) => total + group[1].length, 0);
-      this.proxyStats.active = Math.floor(this.proxyStats.total * 0.8); // Assume 80% active
-      this.proxyStats.percentage = this.proxyStats.total > 0 ? (this.proxyStats.active / this.proxyStats.total) * 100 : 0;
-
-      // Calculate account stats from stored data
-      const accounts = JSON.parse(localStorage.getItem('codeScraperAccounts') || '[]');
-      this.accountStats.total = accounts.length;
-      this.accountStats.active = accounts.filter(acc => acc.status === 'active').length;
-      this.accountStats.percentage = this.accountStats.total > 0 ? (this.accountStats.active / this.accountStats.total) * 100 : 0;
     },
-
-    initializeDashboard() {
-      // Initialize any dashboard-specific functionality
-      this.updateStorageUsage();
-    },
-
+    
     updateStorageUsage() {
-      // Calculate storage usage from real data
+      // Safe calculation
+      const usedStorage = dataFixer.safeReduce(
+        this.recentResults,
+        (total, result) => total + (result.size || 0),
+        0
+      );
+      
       const totalStorage = 500 * 1024 * 1024 * 1024; // 500GB in bytes
-      const usedStorage = this.recentResults.reduce((total, result) => total + (result.size || 0), 0);
       const percentage = totalStorage > 0 ? (usedStorage / totalStorage) * 100 : 0;
       
       this.storageUsage = {
@@ -424,17 +509,18 @@ export default {
         used: this.formatBytes(usedStorage)
       };
     },
-
+    
+    // Rest of your methods remain the same...
     async startScraping() {
       this.$router.push('/scraper');
     },
-
+    
     async startQuickSearch() {
       if (!this.quickSearch.query.trim()) {
         this.showNotification('Please enter a search query', 'error');
         return;
       }
-
+      
       try {
         if (window.electronAPI) {
           await window.electronAPI.startQuickSearch({
@@ -443,52 +529,53 @@ export default {
           });
           this.showNotification('Quick search started!', 'success');
         } else {
-          // Demo mode - add placeholder result
+          // Demo mode
           const newResult = {
             id: Date.now(),
             title: this.quickSearch.query,
             platform: this.quickSearch.platform === 'all' ? 'github' : this.quickSearch.platform,
             date: new Date().toISOString(),
             language: 'JavaScript',
-            lines: 150
+            lines: 150,
+            size: 1024 * 5 // 5KB
           };
           this.recentResults.unshift(newResult);
           this.showNotification('Demo: Quick search completed', 'success');
+          this.updateStorageUsage();
         }
       } catch (error) {
         console.error('Error starting quick search:', error);
         this.showNotification('Failed to start search', 'error');
       }
     },
-
+    
     viewResult(result) {
-      // Navigate to storage with this result selected
       this.$router.push({
         name: 'Storage',
         query: { resultId: result.id }
       });
     },
-
+    
     changeLicense() {
-      // Show license change dialog
       this.showNotification('License change feature coming soon', 'info');
     },
-
+    
     formatNumber(num) {
-      return new Intl.NumberFormat().format(num);
+      return new Intl.NumberFormat().format(num || 0);
     },
-
+    
     formatBytes(bytes) {
-      if (!bytes) return '0 B';
+      if (!bytes || bytes === 0) return '0 B';
       const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(1024));
       return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
     },
-
+    
     formatDate(dateString) {
+      if (!dateString) return 'Unknown';
       return new Date(dateString).toLocaleDateString();
     },
-
+    
     formatPlatform(platform) {
       const platforms = {
         github: 'GitHub',
@@ -500,7 +587,7 @@ export default {
       };
       return platforms[platform] || platform;
     },
-
+    
     getPlatformIcon(platform) {
       const icons = {
         github: 'mdi:github',
@@ -512,12 +599,10 @@ export default {
       };
       return icons[platform] || 'material-symbols:code';
     },
-
+    
     showNotification(message, type = 'info') {
-      // You can integrate with a notification system here
       console.log(`${type.toUpperCase()}: ${message}`);
-      // For now, we'll use a simple alert
-      alert(message);
+      // Implement your notification system here
     }
   }
 }

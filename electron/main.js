@@ -1,16 +1,17 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, screen } from 'electron';
-import path from 'path';
+import { join, dirname, resolve, basename } from 'path'; 
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import os from 'os';
+import fsSync from 'fs';
 import { fileURLToPath } from 'url';
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // 🔥 IMPORT THE REAL PLAYWRIGHT SCRAPER
 import { EnhancedCodeScraper } from '../src/enhanced-code-scraper.js';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename); 
 
 // Security flags
 app.commandLine.appendSwitch('--no-sandbox');
@@ -22,12 +23,13 @@ let mainWindow;
 let activeScrapers = new Map();
 
 // 🎯 CONFIGURATION MANAGEMENT
-const CONFIG_PATH = path.join(app.getPath('userData'), 'codescraper-config.json');
-const ACCOUNTS_PATH = path.join(app.getPath('userData'), 'codescraper-accounts.json');
-const SESSIONS_PATH = path.join(app.getPath('userData'), 'codescraper-sessions');
+// 🎯 CONFIGURATION MANAGEMENT
+const CONFIG_PATH = join(app.getPath('userData'), 'codescraper-config.json');    // ✅ Use join() not join()
+const ACCOUNTS_PATH = join(app.getPath('userData'), 'codescraper-accounts.json'); // ✅ Use join() not join()
+const SESSIONS_PATH = join(app.getPath('userData'), 'codescraper-sessions');      // ✅ Use join() not join()
 
 function ensureDataDirectory() {
-  if (!fsSync.existsSync(SESSIONS_PATH)) {
+  if (!existsSync(SESSIONS_PATH)) {
     fsSync.mkdirSync(SESSIONS_PATH, { recursive: true });
   }
 }
@@ -335,21 +337,28 @@ async function createWindow() {
     x: x,
     y: y,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      enableRemoteModule: false,
-      webSecurity: false, // 🔥 TEMPORARY for testing
-      preload: path.join(__dirname, 'preload.js'),
-      webviewTag: false,
-      safeDialogs: true
+    nodeIntegration: false,
+    contextIsolation: true,
+    enableRemoteModule: false,
+    sandbox: true,
+    webSecurity: true,
+    preload: join(__dirname, 'preload-complete.js'),
+    webviewTag: false,
+    safeDialogs: true,
+    experimentalFeatures: true,
+    nodeIntegrationInWorker: false,
+    enableRemoteModule: false,
+    contextIsolation: true,
+    worldSafeExecuteJavaScript: true,
+    additionalArguments: ['--enable-experimental-web-platform-features']
     },
-    title: 'CodeScraper Pro - Solar Projects Chad 🇹🇩',
+    title: 'CodeHarvest Studio - Solar Projects Chad 🇹🇩',
     show: true,
     frame: true,
     center: true,
     autoHideMenuBar: false,
     backgroundColor: '#1a1a1a',
-    icon: path.join(process.cwd(), 'public', 'assets', 'icon.png'),
+    icon: join(process.cwd(), 'public', 'assets', 'icon.png'),
     skipTaskbar: false,
     alwaysOnTop: false,
     fullscreenable: true,
@@ -357,31 +366,94 @@ async function createWindow() {
     maximizable: true
   });
 
-  // 🔥 CRITICAL: CSP MODIFICATION MUST BE HERE
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    console.log('📡 Request URL:', details.url);
-    
-    if (details.url.startsWith('https://localhost:3000')) {
-      const responseHeaders = {
-        ...details.responseHeaders,
-        'content-security-policy': [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:3000 https:; " +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://localhost:3000 https: blob:; " +
-          "style-src 'self' 'unsafe-inline' https://localhost:3000; " + // 🔥 REMOVED fonts.googleapis.com
-          "font-src 'self' data: https://localhost:3000; " + // 🔥 REMOVED fonts.gstatic.com
-          "img-src 'self' data: blob: https:; " +
-          "connect-src 'self' https://localhost:3000 wss://localhost:3000; " + // 🔥 REMOVED external APIs
-          "frame-src 'none'; " +
-          "object-src 'none';"
-        ]
-      };
-      
-      console.log('🔧 CSP headers modified for:', details.url);
-      callback({ responseHeaders });
-    } else {
-      callback({ responseHeaders: details.responseHeaders });
-    }
-  });
+
+  // ERROR PAGE 
+
+  function showErrorPage(window, message) {
+  const errorHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>CodeHarvest Studio - Setup Required</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif; 
+          background: #1a1a1a;
+          color: white;
+          margin: 0;
+          padding: 40px;
+          height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .container {
+          background: #2a2a2a;
+          padding: 40px;
+          border-radius: 10px;
+          max-width: 600px;
+          text-align: center;
+          border: 1px solid #444;
+        }
+        h1 { color: #ff6b6b; margin-top: 0; }
+        code { 
+          background: #333; 
+          padding: 10px; 
+          border-radius: 5px;
+          display: block;
+          margin: 15px 0;
+          font-family: monospace;
+        }
+        .btn {
+          background: #4CAF50;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 16px;
+          margin: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🛠️ Setup Required</h1>
+        <p>${message}</p>
+        <code id="command"></code>
+        <div>
+          <button class="btn" onclick="location.reload()">🔄 Retry</button>
+          <button class="btn" onclick="window.electronAPI?.openDevTools?.()">🔧 Open DevTools</button>
+        </div>
+      </div>
+      <script>
+        document.getElementById('command').textContent = 
+          window.location.protocol === 'file:' ? 
+          'npm run build' : 'npm run dev';
+      </script>
+    </body>
+    </html>
+  `;
+  
+  window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
+  window.show();
+}
+
+mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+  const responseHeaders = {
+    ...details.responseHeaders,
+    'Content-Security-Policy': [
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "font-src 'self' data:; " +
+      "img-src 'self' data: blob:; " +
+      "connect-src 'self'"
+    ]
+  };
+  
+  callback({ responseHeaders });
+});
 
   // ✅ Disable SSL verification (keep this)
   mainWindow.webContents.session.setCertificateVerifyProc(() => {
@@ -389,15 +461,22 @@ async function createWindow() {
     return 0;
   });
 
-  const viteDevServer = 'https://localhost:3000';
-  console.log(`📡 Loading from: ${viteDevServer}`);
+   const indexPath = join(process.cwd(), 'dist', 'index.html');
   
-  mainWindow.loadURL(viteDevServer).then(() => {
-    console.log('✅ Load successful');
-  }).catch(err => {
-    console.error('❌ Load failed:', err.message);
-    showErrorPage(err);
-  });
+  if (existsSync(indexPath)) {
+    console.log('📁 Loading from built files:', indexPath);
+    mainWindow.loadFile(indexPath).then(() => {
+      console.log('✅ App loaded from dist/');
+      mainWindow.show();
+      mainWindow.webContents.openDevTools();
+    }).catch(err => {
+      console.error('❌ Failed to load from dist:', err);
+      showErrorPage(mainWindow, 'Built files not found. Run: npm run build');
+    });
+  } else {
+    console.error('❌ dist/index.html not found!');
+    showErrorPage(mainWindow, 'Please run: npm run build');
+  }
 
   // Open DevTools
   mainWindow.webContents.openDevTools();
@@ -441,7 +520,7 @@ function showErrorPage(error) {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>CodeScraper Pro - Connection Error</title>
+        <title>CodeHarvest Studio - Connection Error</title>
         <style>
           body { 
             font-family: Arial, sans-serif; 
@@ -508,6 +587,9 @@ function showErrorPage(error) {
   mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
 }
 
+app.commandLine.appendSwitch('disable-features', 'CrossOriginOpenerPolicy');
+app.commandLine.appendSwitch('disable-site-isolation-trials');
+
 // 🎯 APP INITIALIZATION
 app.whenReady().then(async () => {
   console.log('🚀 Electron app is ready!');
@@ -556,8 +638,8 @@ ipcMain.on('open-devtools', () => {
 });
 
 // 🔌 PROXY MANAGEMENT HANDLERS
-const PROXIES_PATH = path.join(app.getPath('userData'), 'codescraper-proxies.json');
-const PROXY_SETTINGS_PATH = path.join(app.getPath('userData'), 'codescraper-proxy-settings.json');
+const PROXIES_PATH = join(app.getPath('userData'), 'codescraper-proxies.json');
+const PROXY_SETTINGS_PATH = join(app.getPath('userData'), 'codescraper-proxy-settings.json');
 
 // Load proxies from storage
 async function loadProxies() {
@@ -754,11 +836,31 @@ ipcMain.handle('test-all-proxies', async () => {
   }
 });
 
+
+// 🔧 PROXY STATS HANDLER (add this)
+ipcMain.handle('get-proxy-stats', async () => {
+  try {
+    const proxies = await loadProxies();
+    return {
+      success: true,
+      stats: {
+        total: proxies.length,
+        active: proxies.filter(p => p.enabled && p.status === 'active').length,
+        failed: proxies.filter(p => p.status === 'failed').length,
+        testing: proxies.filter(p => p.status === 'testing').length
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+
 async function saveScrapingResults(results) {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `scraping-results-${timestamp}.json`;
-    const filepath = path.join(app.getPath('downloads'), filename);
+    const filepath = join(app.getPath('downloads'), filename);
     
     await fs.writeFile(filepath, JSON.stringify(results, null, 2));
     return filepath;
@@ -953,12 +1055,12 @@ ipcMain.handle('get-storage-info', async () => {
       success: true,
       info: {
         userDataPath,
-        configExists: fsSync.existsSync(CONFIG_PATH),
-        accountsExists: fsSync.existsSync(ACCOUNTS_PATH),
+        configExists: existsSync(CONFIG_PATH),
+        accountsExists: existsSync(ACCOUNTS_PATH),
         accountsCount: accounts.length,
         recentResultsCount: recentResults.length,
         sessionsPath: SESSIONS_PATH,
-        sessionsExists: fsSync.existsSync(SESSIONS_PATH),
+        sessionsExists: existsSync(SESSIONS_PATH),
         timestamp: new Date().toISOString()
       }
     };
@@ -1403,7 +1505,7 @@ ipcMain.handle('get-job-history', async () => {
 
 async function loadJobHistory() {
   try {
-    const historyPath = path.join(SESSIONS_PATH, 'job-history.json');
+    const historyPath = join(SESSIONS_PATH, 'job-history.json');
     await fs.access(historyPath);
     const data = await fs.readFile(historyPath, 'utf8');
     return JSON.parse(data);
@@ -1414,7 +1516,7 @@ async function loadJobHistory() {
 
 async function saveJobHistory(history) {
   try {
-    const historyPath = path.join(SESSIONS_PATH, 'job-history.json');
+    const historyPath = join(SESSIONS_PATH, 'job-history.json');
     await fs.writeFile(historyPath, JSON.stringify(history, null, 2));
   } catch (error) {
     console.error('Failed to save job history:', error);
@@ -1456,26 +1558,70 @@ ipcMain.handle('get-storage-locations', async () => {
 
 ipcMain.handle('add-storage-location', async (event, locationData) => {
   try {
-    console.log('➕ Adding storage location:', locationData.path);
+    console.log('➕ Adding storage location:', locationData);
+    
+    // Ensure we have a clean object with only serializable properties
+    const cleanLocationData = {
+      path: String(locationData.path || ''),
+      name: String(locationData.name || basename(locationData.path) || 'Custom Location'),
+      autoBackup: Boolean(locationData.autoBackup),
+      limitGB: locationData.limitGB ? Number(locationData.limitGB) : null
+    };
+    
+    console.log('Clean location data:', cleanLocationData);
     
     // Validate path exists
-    await fs.access(locationData.path);
+    await fs.access(cleanLocationData.path);
     
-    // Calculate stats
+    // Create location object
     const location = {
-      ...locationData,
+      path: cleanLocationData.path,
+      name: cleanLocationData.name,
       custom: true,
       type: 'directory',
       detected: false,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      autoBackup: cleanLocationData.autoBackup,
+      limitGB: cleanLocationData.limitGB,
+      size: 0,
+      free: 0,
+      fileCount: 0,
+      accessible: true
     };
     
-    await calculateLocationStats(location);
+    // Try to calculate stats
+    try {
+      const stats = await fs.stat(location.path);
+      if (stats.isDirectory()) {
+        // Get basic stats
+        const size = await getDirectorySize(location.path);
+        location.size = size;
+        
+        // Try to count files (this might fail for large directories)
+        try {
+          const fileCount = await countFilesInDirectory(location.path);
+          location.fileCount = fileCount;
+        } catch (e) {
+          location.fileCount = 0;
+        }
+      }
+    } catch (error) {
+      console.warn('Could not get detailed stats:', error.message);
+      location.accessible = false;
+    }
     
-    return { success: true, location };
+    return { 
+      success: true, 
+      location: JSON.parse(JSON.stringify(location)) // Ensure it's fully serializable
+    };
     
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Error adding location:', error);
+    return { 
+      success: false, 
+      error: error.message,
+      locationData: locationData // For debugging
+    };
   }
 });
 
@@ -1532,6 +1678,115 @@ ipcMain.handle('get-storage-usage', async () => {
     
   } catch (error) {
     return { success: false, error: error.message };
+  }
+});
+
+// 🔧 CLOUD STORAGE DETECTION HANDLERS
+ipcMain.handle('detect-cloud-storage', async () => {
+  try {
+    const cloudMounts = await detectCloudMounts();
+    return {
+      success: true,
+      cloudMounts,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Cloud detection error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-cloud-status', async () => {
+  try {
+    const homeDir = os.homedir();
+    
+    // Check for OneDrive
+    const oneDrivePaths = [
+      join(homeDir, 'OneDrive'),
+      join(homeDir, 'OneDrive - Personal'),
+      join(homeDir, 'OneDrive - Business')
+    ];
+    
+    let oneDriveStatus = { connected: false, path: null };
+    for (const path of oneDrivePaths) {
+      try {
+        await fs.access(path);
+        const stats = await fs.stat(path);
+        if (stats.isDirectory()) {
+          oneDriveStatus = { connected: true, path, accessible: true };
+          break;
+        }
+      } catch { /* Continue */ }
+    }
+    
+    // Check for Google Drive
+    const googleDrivePaths = [
+      join(homeDir, 'Google Drive'),
+      join(homeDir, 'GoogleDrive')
+    ];
+    
+    let googleDriveStatus = { connected: false, path: null };
+    for (const path of googleDrivePaths) {
+      try {
+        await fs.access(path);
+        const stats = await fs.stat(path);
+        if (stats.isDirectory()) {
+          googleDriveStatus = { connected: true, path, accessible: true };
+          break;
+        }
+      } catch { /* Continue */ }
+    }
+    
+    // Check for Dropbox
+    const dropboxPath = join(homeDir, 'Dropbox');
+    let dropboxStatus = { connected: false, path: null };
+    try {
+      await fs.access(dropboxPath);
+      const stats = await fs.stat(dropboxPath);
+      if (stats.isDirectory()) {
+        dropboxStatus = { connected: true, path: dropboxPath, accessible: true };
+      }
+    } catch { /* Continue */ }
+    
+    return {
+      success: true,
+      clouds: {
+        onedrive: oneDriveStatus,
+        googleDrive: googleDriveStatus,
+        dropbox: dropboxStatus
+      }
+    };
+    
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-cloud-config', async (event, config) => {
+  try {
+    const cloudConfigPath = join(app.getPath('userData'), 'cloud-config.json');
+    await fs.writeFile(cloudConfigPath, JSON.stringify(config, null, 2));
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-cloud-config', async () => {
+  try {
+    const cloudConfigPath = join(app.getPath('userData'), 'cloud-config.json');
+    await fs.access(cloudConfigPath);
+    const data = await fs.readFile(cloudConfigPath, 'utf8');
+    return { success: true, config: JSON.parse(data) };
+  } catch (error) {
+    return { 
+      success: true, 
+      config: {
+        onedrive: { enabled: false, syncFrequency: 'daily' },
+        googleDrive: { enabled: false, syncFrequency: 'daily' },
+        dropbox: { enabled: false, syncFrequency: 'daily' }
+      }
+    };
   }
 });
 
@@ -1833,7 +2088,7 @@ async function detectStorageDevices() {
             const subdirs = await fs.readdir(mountDir, { withFileTypes: true });
             for (const subdir of subdirs) {
               if (subdir.isDirectory()) {
-                const fullPath = path.join(mountDir, subdir.name);
+                const fullPath = join(mountDir, subdir.name);
                 if (!drives.some(d => d.path === fullPath)) {
                   await processPotentialMount(fullPath, drives);
                 }
@@ -1964,7 +2219,7 @@ async function processLinuxMount(mountPoint, name, drives) {
       const cleanName = name
         .replace(/^\//, '')
         .replace(/[^a-zA-Z0-9\s\-_]/g, ' ')
-        .trim() || path.basename(mountPoint) || 'Linux Volume';
+        .trim() || basename(mountPoint) || 'Linux Volume';
       
       drives.push({
         path: mountPoint,
@@ -2109,7 +2364,7 @@ async function getLinuxVolumeName(mountPoint) {
     }
     
     // Use directory name
-    const dirName = path.basename(mountPoint);
+    const dirName = basename(mountPoint);
     if (dirName && dirName !== '') {
       return dirName.charAt(0).toUpperCase() + dirName.slice(1);
     }
@@ -2122,7 +2377,7 @@ async function getLinuxVolumeName(mountPoint) {
     
     return 'Linux Volume';
   } catch (error) {
-    return path.basename(mountPoint) || 'Linux Volume';
+    return basename(mountPoint) || 'Linux Volume';
   }
 }
 
@@ -2195,14 +2450,14 @@ async function getLinuxUserDirectories() {
   
   const userDirectories = [
     { path: userHome, name: 'Home Directory' },
-    { path: path.join(userHome, 'Desktop'), name: 'Desktop' },
-    { path: path.join(userHome, 'Documents'), name: 'Documents' },
-    { path: path.join(userHome, 'Downloads'), name: 'Downloads' },
-    { path: path.join(userHome, 'Pictures'), name: 'Pictures' },
-    { path: path.join(userHome, 'Music'), name: 'Music' },
-    { path: path.join(userHome, 'Videos'), name: 'Videos' },
-    { path: path.join(userHome, 'Public'), name: 'Public' },
-    { path: path.join(userHome, 'Templates'), name: 'Templates' }
+    { path: join(userHome, 'Desktop'), name: 'Desktop' },
+    { path: join(userHome, 'Documents'), name: 'Documents' },
+    { path: join(userHome, 'Downloads'), name: 'Downloads' },
+    { path: join(userHome, 'Pictures'), name: 'Pictures' },
+    { path: join(userHome, 'Music'), name: 'Music' },
+    { path: join(userHome, 'Videos'), name: 'Videos' },
+    { path: join(userHome, 'Public'), name: 'Public' },
+    { path: join(userHome, 'Templates'), name: 'Templates' }
   ];
   
   for (const dir of userDirectories) {
@@ -2306,9 +2561,9 @@ async function detectCloudMounts() {
     
     // OneDrive detection
     const oneDrivePaths = [
-      path.join(homeDir, 'OneDrive'),
-      path.join(homeDir, 'OneDrive - Personal'),
-      path.join(homeDir, 'OneDrive - Business')
+      join(homeDir, 'OneDrive'),
+      join(homeDir, 'OneDrive - Personal'),
+      join(homeDir, 'OneDrive - Business')
     ];
     
     for (const oneDrivePath of oneDrivePaths) {
@@ -2331,8 +2586,8 @@ async function detectCloudMounts() {
     
     // Google Drive detection
     const googleDrivePaths = [
-      path.join(homeDir, 'Google Drive'),
-      path.join(homeDir, 'GoogleDrive')
+      join(homeDir, 'Google Drive'),
+      join(homeDir, 'GoogleDrive')
     ];
     
     for (const googleDrivePath of googleDrivePaths) {
@@ -2354,7 +2609,7 @@ async function detectCloudMounts() {
     }
     
     // Dropbox detection
-    const dropboxPath = path.join(homeDir, 'Dropbox');
+    const dropboxPath = join(homeDir, 'Dropbox');
     try {
       await fs.access(dropboxPath);
       const stats = await fs.stat(dropboxPath);
@@ -2422,7 +2677,7 @@ async function getDirectorySize(dirPath) {
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     
     for (const item of items) {
-      const itemPath = path.join(dirPath, item.name);
+      const itemPath = join(dirPath, item.name);
       
       try {
         if (item.isDirectory()) {
@@ -2450,7 +2705,7 @@ async function countFilesInDirectory(dirPath) {
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     
     for (const item of items) {
-      const itemPath = path.join(dirPath, item.name);
+      const itemPath = join(dirPath, item.name);
       
       try {
         if (item.isDirectory()) {
@@ -2479,7 +2734,7 @@ async function countDirectoriesInDirectory(dirPath) {
       try {
         if (item.isDirectory()) {
           count++;
-          const itemPath = path.join(dirPath, item.name);
+          const itemPath = join(dirPath, item.name);
           count += await countDirectoriesInDirectory(itemPath);
         }
       } catch (error) {
@@ -2508,7 +2763,7 @@ function getDriveTypeString(driveType) {
 
 function getVolumeName(mountPoint) {
   // Extract volume name from path
-  const parts = mountPoint.split(path.sep);
+  const parts = mountPoint.split(/[\\/]/);
   return parts[parts.length - 1] || mountPoint;
 }
 
@@ -2578,5 +2833,45 @@ ipcMain.handle('validate-license', async (event, licenseKey) => {
     return { valid: false, error: error.message };
   }
 });
+
+ipcMain.handle('get-license-info', async () => {
+  try {
+    return {
+      valid: true,
+      plan: 'pro',
+      expires: '2026-12-31',
+      features: ['full'],
+      message: 'Development mode - full access'
+    };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-account-stats', async () => {
+  try {
+    const accounts = await loadAccounts();
+    return {
+      success: true,
+      stats: {
+        totalAccounts: accounts.length,
+        activeAccounts: accounts.filter(a => a.enabled).length,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-recent-results', async () => {
+  try {
+    // Return empty array if no results yet
+    return { success: true, results: [] };
+  } catch (error) {
+    return { success: false, error: error.message, results: [] };
+  }
+});
+
 
 console.log('✅ Production main.js with HTTP server and REAL Playwright scraper loaded!');

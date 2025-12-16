@@ -10,7 +10,7 @@
     <div class="proxy-stats-grid">
       <div class="stat-card" v-for="stat in proxyStats" :key="stat.id" :class="stat.class">
         <div class="stat-icon">
-          <iconify-icon :icon="stat.icon"></iconify-icon>
+          <LocalIcon :icon="stat.icon"></LocalIcon>
         </div>
         <div class="stat-content">
           <h3>{{ stat.value }}</h3>
@@ -27,15 +27,15 @@
           <h2>Proxy List</h2>
           <div class="header-actions">
             <button class="btn btn-primary" @click="showAddProxyModal = true">
-              <iconify-icon icon="material-symbols:add"></iconify-icon>
+              <LocalIcon icon="material-symbols:add"></LocalIcon>
               Add Proxy
             </button>
             <button class="btn btn-secondary" @click="importProxies">
-              <iconify-icon icon="material-symbols:upload"></iconify-icon>
+              <LocalIcon icon="material-symbols:upload"></LocalIcon>
               Import
             </button>
             <button class="btn btn-outline" @click="testAllProxies" :disabled="testingAll">
-              <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+              <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               {{ testingAll ? 'Testing...' : 'Test All' }}
             </button>
           </div>
@@ -69,7 +69,7 @@
 
               <div class="table-cell" style="width: 60px">
                 <div class="status-indicator" :class="getStatusClass(proxy.status)">
-                  <iconify-icon :icon="getStatusIcon(proxy.status)"></iconify-icon>
+                  <LocalIcon icon="getStatusIcon(proxy.status)"></LocalIcon>
                 </div>
               </div>
 
@@ -112,13 +112,13 @@
                 <div class="action-buttons">
                   <button class="btn-icon" @click="testProxy(proxy)" 
                           :disabled="proxy.testing" :title="proxy.testing ? 'Testing...' : 'Test Proxy'">
-                    <iconify-icon :icon="proxy.testing ? 'eos-icons:loading' : 'material-symbols:play-arrow'"></iconify-icon>
+                    <LocalIcon :icon="proxy.testing ? 'eos-icons:loading' : 'material-symbols:play-arrow'"></LocalIcon>
                   </button>
                   <button class="btn-icon" @click="editProxy(proxy)" title="Edit Proxy">
-                    <iconify-icon icon="material-symbols:edit"></iconify-icon>
+                    <LocalIcon icon="material-symbols:edit"></LocalIcon>
                   </button>
                   <button class="btn-icon btn-danger" @click="removeProxy(proxy.id)" title="Delete Proxy">
-                    <iconify-icon icon="material-symbols:delete"></iconify-icon>
+                    <LocalIcon icon="material-symbols:delete"></LocalIcon>
                   </button>
                 </div>
               </div>
@@ -126,11 +126,11 @@
 
             <!-- Empty State -->
             <div v-if="filteredProxies.length === 0" class="empty-state">
-              <iconify-icon icon="material-symbols:proxy" class="empty-icon"></iconify-icon>
+              <LocalIcon icon="mdi:proxy" class="empty-icon"></LocalIcon>
               <h3>No proxies found</h3>
               <p>Add your first proxy to get started</p>
               <button class="btn btn-primary" @click="showAddProxyModal = true">
-                <iconify-icon icon="material-symbols:add"></iconify-icon>
+                <LocalIcon icon="material-symbols:add"></LocalIcon>
                 Add Proxy
               </button>
             </div>
@@ -145,19 +145,19 @@
           <div class="bulk-buttons">
             <button class="btn btn-outline" @click="testSelectedProxies" 
                     :disabled="testingSelected">
-              <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+              <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               {{ testingSelected ? 'Testing...' : 'Test Selected' }}
             </button>
             <button class="btn btn-outline" @click="enableSelectedProxies">
-              <iconify-icon icon="material-symbols:check-circle"></iconify-icon>
+              <LocalIcon icon="material-symbols:check-circle"></LocalIcon>
               Enable
             </button>
             <button class="btn btn-outline" @click="disableSelectedProxies">
-              <iconify-icon icon="material-symbols:block"></iconify-icon>
+              <LocalIcon icon="material-symbols:block"></LocalIcon>
               Disable
             </button>
             <button class="btn btn-danger" @click="deleteSelectedProxies">
-              <iconify-icon icon="material-symbols:delete"></iconify-icon>
+              <LocalIcon icon="material-symbols:delete"></LocalIcon>
               Delete
             </button>
           </div>
@@ -169,7 +169,7 @@
         <div class="config-card">
           <div class="config-header">
             <h3>Rotation Settings</h3>
-            <iconify-icon icon="material-symbols:settings"></iconify-icon>
+            <LocalIcon icon="material-symbols:settings"></LocalIcon>
           </div>
 
           <div class="config-content">
@@ -214,7 +214,7 @@
 
           <div class="config-footer">
             <button class="btn btn-primary" @click="saveRotationSettings">
-              <iconify-icon icon="material-symbols:save"></iconify-icon>
+              <LocalIcon icon="material-symbols:save"></LocalIcon>
               Save Settings
             </button>
           </div>
@@ -224,27 +224,27 @@
         <div class="config-card">
           <div class="config-header">
             <h3>Quick Actions</h3>
-            <iconify-icon icon="material-symbols:flash-on"></iconify-icon>
+            <LocalIcon icon="material-symbols:flash-on"></LocalIcon>
           </div>
 
           <div class="quick-actions">
             <button class="quick-action-btn" @click="testAllProxies" :disabled="testingAll">
-              <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+              <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               <span>Test All Proxies</span>
             </button>
 
             <button class="quick-action-btn" @click="exportProxies">
-              <iconify-icon icon="material-symbols:download"></iconify-icon>
+              <LocalIcon icon="material-symbols:download"></LocalIcon>
               <span>Export Proxies</span>
             </button>
 
             <button class="quick-action-btn" @click="clearFailedProxies">
-              <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
+              <LocalIcon icon="material-symbols:clear-all"></LocalIcon>
               <span>Clear Failed</span>
             </button>
 
             <button class="quick-action-btn" @click="optimizeProxyList">
-              <iconify-icon icon="material-symbols:auto-mode"></iconify-icon>
+              <LocalIcon icon="material-symbols:auto-mode"></LocalIcon>
               <span>Optimize List</span>
             </button>
           </div>
@@ -254,7 +254,7 @@
         <div class="config-card">
           <div class="config-header">
             <h3>Real-time Testing</h3>
-            <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+            <LocalIcon icon="material-symbols:monitor-heart"></LocalIcon>
           </div>
 
           <div class="testing-controls">
@@ -271,7 +271,7 @@
             </div>
 
             <button class="btn btn-primary" @click="startBatchTest" :disabled="batchTesting">
-              <iconify-icon :icon="batchTesting ? 'eos-icons:loading' : 'material-symbols:play-arrow'"></iconify-icon>
+              <LocalIcon :icon="batchTesting ? 'eos-icons:loading' : 'material-symbols:play-arrow'"></LocalIcon>
               {{ batchTesting ? 'Testing...' : 'Start Batch Test' }}
             </button>
           </div>
@@ -294,7 +294,7 @@
         <div class="modal-header">
           <h3>{{ editingProxy ? 'Edit Proxy' : 'Add New Proxy' }}</h3>
           <button class="btn-close" @click="closeModal">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
 
@@ -401,7 +401,7 @@ export default {
     return {
       // Proxy statistics
       proxyStats: [
-        { id: 1, label: 'Total Proxies', value: '0', icon: 'material-symbols:proxy', class: 'stat-primary' },
+        { id: 1, label: 'Total Proxies', value: '0', icon: 'mdi:proxy', class: 'stat-primary' },
         { id: 2, label: 'Active', value: '0', icon: 'material-symbols:check-circle', class: 'stat-success' },
         { id: 3, label: 'Testing', value: '0', icon: 'material-symbols:schedule', class: 'stat-warning' },
         { id: 4, label: 'Failed', value: '0', icon: 'material-symbols:error', class: 'stat-error' }
@@ -572,7 +572,7 @@ export default {
       const failed = this.proxies.filter(p => p.status === 'failed').length
 
       this.proxyStats = [
-        { id: 1, label: 'Total Proxies', value: total.toString(), icon: 'material-symbols:proxy', class: 'stat-primary' },
+        { id: 1, label: 'Total Proxies', value: total.toString(), icon: 'mdi:proxy', class: 'stat-primary' },
         { id: 2, label: 'Active', value: active.toString(), icon: 'material-symbols:check-circle', class: 'stat-success' },
         { id: 3, label: 'Testing', value: testing.toString(), icon: 'material-symbols:schedule', class: 'stat-warning' },
         { id: 4, label: 'Failed', value: failed.toString(), icon: 'material-symbols:error', class: 'stat-error' }
@@ -1256,7 +1256,7 @@ export default {
   font-size: 1.2rem;
 }
 
-.config-header iconify-icon {
+.config-header LocalIcon {
   font-size: 1.5rem;
   color: var(--primary-color);
 }
@@ -1370,7 +1370,7 @@ export default {
   border-color: var(--primary-color);
 }
 
-.quick-action-btn iconify-icon {
+.quick-action-btn LocalIcon {
   font-size: 1.25rem;
   color: var(--primary-color);
 }

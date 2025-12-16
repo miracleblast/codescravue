@@ -1405,10 +1405,7 @@ const BEAST_MODE_CONFIG = {
     bypassCloudflare: true,
     bypassAkamai: true,
     
-    // 🧠 AI
-    aiEnabled: false, // Set to true for AI enrichment (needs OpenAI key)
-    openaiKey: process.env.OPENAI_KEY,
-    ocrEnabled: false, // OCR fallback
+
     
     // 🧩 CAPTCHA
     captchaSolver: {

@@ -4,17 +4,17 @@
     <div class="control-bar">
       <div class="status-indicators">
         <div class="status-indicator" @click="openMonitoringModal" title="System Monitor">
-          <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+          <LocalIcon icon="material-symbols:monitor-heart"></LocalIcon>
           <span class="indicator-value">{{ miniStats.cpu }}%</span>
           <span class="indicator-label">CPU</span>
         </div>
         <div class="status-indicator" @click="openJobManagerModal" title="Job Manager">
-          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          <LocalIcon icon="material-symbols:work-history"></LocalIcon>
           <span class="indicator-value">{{ miniStats.jobs }}</span>
           <span class="indicator-label">Jobs</span>
         </div>
         <div class="status-indicator" @click="openMonitoringModal" title="Memory Usage">
-          <iconify-icon icon="material-symbols:memory"></iconify-icon>
+          <LocalIcon icon="material-symbols:memory"></LocalIcon>
           <span class="indicator-value">{{ miniStats.memory }}%</span>
           <span class="indicator-label">RAM</span>
         </div>
@@ -22,15 +22,15 @@
       
       <div class="control-actions">
         <button class="btn btn-sm btn-outline" @click="openMonitoringModal">
-          <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+          <LocalIcon icon="material-symbols:monitor-heart"></LocalIcon>
           Monitor
         </button>
         <button class="btn btn-sm btn-outline" @click="openJobManagerModal">
-          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          <LocalIcon icon="material-symbols:work-history"></LocalIcon>
           Job Manager
         </button>
         <button class="btn btn-sm btn-primary" @click="openBothModals">
-          <iconify-icon icon="material-symbols:dashboard"></iconify-icon>
+          <LocalIcon icon="material-symbols:dashboard"></LocalIcon>
           Dashboard
         </button>
       </div>
@@ -39,7 +39,7 @@
     <!-- Scraper Overview -->
     <div class="tab-content active" id="scraper">
       <div class="tab-header">
-        <h2><iconify-icon icon="iconamoon:cloud-download-light"></iconify-icon> Advanced Code Scraper</h2>
+        <h2><LocalIcon icon="iconamoon:cloud-download-light"></LocalIcon> Advanced Code Scraper</h2>
         <p>Extract code from multiple platforms with intelligent filtering and real-time monitoring</p>
       </div>
     </div>
@@ -47,26 +47,26 @@
     <!-- Quick Actions -->
     <div class="quick-actions">
       <button class="btn btn-primary" @click="startQuickScraping">
-        <iconify-icon icon="material-symbols:rocket-launch"></iconify-icon>
+        <LocalIcon icon="material-symbols:rocket-launch"></LocalIcon>
         Quick Scrape (Default Settings)
       </button>
       <button class="btn btn-secondary" @click="showAdvancedSettings = !showAdvancedSettings">
-        <iconify-icon icon="material-symbols:settings"></iconify-icon>
+        <LocalIcon icon="material-symbols:settings"></LocalIcon>
         {{ showAdvancedSettings ? 'Hide' : 'Show' }} Advanced Settings
       </button>
       <button class="btn btn-outline" @click="loadSavedSession">
-        <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
+        <LocalIcon icon="material-symbols:folder-open"></LocalIcon>
         Load Session
       </button>
       
       <!-- Job Control Buttons -->
       <div class="job-controls">
         <button class="btn btn-outline" @click="showJobManager = true" title="Manage Jobs">
-          <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+          <LocalIcon icon="material-symbols:work-history"></LocalIcon>
           Jobs ({{ concurrentJobs.total }})
         </button>
         <button class="btn btn-outline" @click="adjustConcurrency" title="Adjust Concurrency">
-          <iconify-icon icon="material-symbols:tune"></iconify-icon>
+          <LocalIcon icon="material-symbols:tune"></LocalIcon>
           {{ maxConcurrentJobs }} max
         </button>
       </div>
@@ -158,7 +158,7 @@
                   v-model="scrapingConfig.fileTypes"
                   :disabled="isScraping"
                 >
-                <iconify-icon class="file-type-icon" :icon="fileType.icon"></iconify-icon>
+                <LocalIcon class="file-type-icon" :icon="fileType.icon"></LocalIcon>
                 {{ fileType.label }}
               </label>
             </div>
@@ -341,7 +341,7 @@
             <option v-for="group in proxyGroups" :key="group" :value="group">{{ group }}</option>
           </select>
           <div v-if="scrapingConfig.proxyGroup !== 'none'" class="proxy-status">
-            <iconify-icon icon="material-symbols:check-circle" style="color: var(--success);"></iconify-icon>
+            <LocalIcon icon="material-symbols:check-circle" style="color: var(--success);"></LocalIcon>
             Proxy group active
           </div>
         </div>
@@ -355,7 +355,7 @@
             </option>
           </select>
           <div v-if="scrapingConfig.account !== 'none'" class="account-status">
-            <iconify-icon icon="material-symbols:check-circle" style="color: var(--success);"></iconify-icon>
+            <LocalIcon icon="material-symbols:check-circle" style="color: var(--success);"></LocalIcon>
             Account authenticated
           </div>
         </div>
@@ -418,8 +418,8 @@
         :disabled="isScraping || !scrapingConfig.query || (scrapingConfig.platform === 'multiple' && scrapingConfig.selectedPlatforms.length === 0)"
         @click="startScraping"
       >
-        <iconify-icon v-if="isScraping" icon="svg-spinners:bars-rotate-fade"></iconify-icon>
-        <iconify-icon v-else icon="material-symbols:play-arrow"></iconify-icon>
+        <LocalIcon v-if="isScraping" icon="svg-spinners:bars-rotate-fade"></LocalIcon>
+        <LocalIcon v-else icon="material-symbols:play-arrow"></LocalIcon>
         {{ isScraping ? 'Scraping...' : 'Start Scraping' }}
       </button>
 
@@ -428,22 +428,22 @@
         :disabled="!isScraping"
         @click="stopScraping"
       >
-        <iconify-icon icon="material-symbols:stop"></iconify-icon>
+        <LocalIcon icon="material-symbols:stop"></LocalIcon>
         Stop Scraping
       </button>
 
       <button class="btn btn-outline" @click="saveSession" :disabled="isScraping">
-        <iconify-icon icon="material-symbols:save"></iconify-icon>
+        <LocalIcon icon="material-symbols:save"></LocalIcon>
         Save Session
       </button>
 
       <button class="btn btn-outline" @click="exportResults" :disabled="results.length === 0 || isScraping">
-        <iconify-icon icon="material-symbols:download"></iconify-icon>
+        <LocalIcon icon="material-symbols:download"></LocalIcon>
         Export Results
       </button>
 
       <button class="btn btn-outline" @click="clearAll" :disabled="isScraping">
-        <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
+        <LocalIcon icon="material-symbols:clear-all"></LocalIcon>
         Clear All
       </button>
     </div>
@@ -487,7 +487,7 @@
         <div class="progress-item">
           <span>Platform:</span>
           <span class="platform-badge" :class="progress.platform">
-            <iconify-icon :icon="getPlatformIcon(progress.platform)"></iconify-icon>
+            <LocalIcon icon="getPlatformIcon(progress.platform)"></LocalIcon>
             {{ formatPlatform(progress.platform) }}
           </span>
         </div>
@@ -511,7 +511,7 @@
         <div class="platform-progress-grid">
           <div v-for="platform in platformProgress" :key="platform.name" class="platform-progress-item">
             <div class="platform-name">
-              <iconify-icon :icon="getPlatformIcon(platform.name)"></iconify-icon>
+              <LocalIcon icon="getPlatformIcon(platform.name)"></LocalIcon>
               {{ formatPlatform(platform.name) }}
             </div>
             <div class="platform-stats">
@@ -531,11 +531,11 @@
         <h3>Scraping Logs</h3>
         <div class="logs-controls">
           <button class="btn btn-sm btn-outline" @click="clearLogs" :disabled="logs.length === 0">
-            <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
+            <LocalIcon icon="material-symbols:clear-all"></LocalIcon>
             Clear Logs
           </button>
           <button class="btn btn-sm btn-outline" @click="exportLogs" :disabled="logs.length === 0">
-            <iconify-icon icon="material-symbols:download"></iconify-icon>
+            <LocalIcon icon="material-symbols:download"></LocalIcon>
             Export Logs
           </button>
           <label class="checkbox-label small">
@@ -552,19 +552,19 @@
           class="log-entry"
           :class="`log-${log.type}`"
         >
-          <iconify-icon :icon="getLogIcon(log.type)"></iconify-icon>
+          <LocalIcon icon="getLogIcon(log.type)"></LocalIcon>
           <span class="log-time">{{ log.time }}</span>
           <span class="log-platform" v-if="log.platform">
             [{{ log.platform.toUpperCase() }}]
           </span>
           <span class="log-message">{{ log.message }}</span>
           <span v-if="log.details" class="log-details" @click="showLogDetails(log)">
-            <iconify-icon icon="material-symbols:info"></iconify-icon>
+            <LocalIcon icon="material-symbols:info"></LocalIcon>
           </span>
         </div>
         
         <div v-if="logs.length === 0" class="no-logs">
-          <iconify-icon icon="material-symbols:info"></iconify-icon>
+          <LocalIcon icon="material-symbols:info"></LocalIcon>
           Logs will appear here when scraping starts
         </div>
       </div>
@@ -577,20 +577,20 @@
         <div class="results-actions">
           <div class="results-stats">
             <span class="stat-item">
-              <iconify-icon icon="material-symbols:code"></iconify-icon>
+              <LocalIcon icon="material-symbols:code"></LocalIcon>
               {{ uniqueLanguages.length }} languages
             </span>
             <span class="stat-item">
-              <iconify-icon icon="material-symbols:folder"></iconify-icon>
+              <LocalIcon icon="material-symbols:folder"></LocalIcon>
               {{ uniquePlatforms.length }} platforms
             </span>
             <span class="stat-item">
-              <iconify-icon icon="material-symbols:data-usage"></iconify-icon>
+              <LocalIcon icon="material-symbols:data-usage"></LocalIcon>
               {{ totalSize }}
             </span>
           </div>
           <button class="btn btn-sm btn-outline" @click="clearResults">
-            <iconify-icon icon="material-symbols:clear-all"></iconify-icon>
+            <LocalIcon icon="material-symbols:clear-all"></LocalIcon>
             Clear Results
           </button>
         </div>
@@ -644,21 +644,21 @@
         >
           <div class="result-header">
             <div class="result-platform">
-              <iconify-icon :icon="getPlatformIcon(result.platform)"></iconify-icon>
+              <LocalIcon icon="getPlatformIcon(result.platform)"></LocalIcon>
               {{ formatPlatform(result.platform) }}
             </div>
             <div class="result-actions">
               <button class="btn-icon" @click="viewResult(result)" title="View Details">
-                <iconify-icon icon="material-symbols:visibility"></iconify-icon>
+                <LocalIcon icon="material-symbols:visibility"></LocalIcon>
               </button>
               <button class="btn-icon" @click="downloadResult(result)" title="Download">
-                <iconify-icon icon="material-symbols:download"></iconify-icon>
+                <LocalIcon icon="material-symbols:download"></LocalIcon>
               </button>
               <button class="btn-icon" @click="copyCode(result)" title="Copy Code" v-if="result.code">
-                <iconify-icon icon="material-symbols:content-copy"></iconify-icon>
+                <LocalIcon icon="material-symbols:content-copy"></LocalIcon>
               </button>
               <button class="btn-icon" @click="bookmarkResult(result)" title="Bookmark">
-                <iconify-icon :icon="result.bookmarked ? 'material-symbols:bookmark' : 'material-symbols:bookmark-outline'"></iconify-icon>
+                <LocalIcon :icon="result.bookmarked ? 'material-symbols:bookmark' : 'material-symbols:bookmark-outline'"></LocalIcon>
               </button>
             </div>
           </div>
@@ -671,19 +671,19 @@
             
             <div class="result-meta">
               <div v-if="result.language" class="result-language">
-                <iconify-icon icon="material-symbols:code"></iconify-icon>
+                <LocalIcon icon="material-symbols:code"></LocalIcon>
                 {{ result.language }}
               </div>
               <div v-if="result.stars" class="result-stars">
-                <iconify-icon icon="material-symbols:star"></iconify-icon>
+                <LocalIcon icon="material-symbols:star"></LocalIcon>
                 {{ result.stars }}
               </div>
               <div v-if="result.size" class="result-size">
-                <iconify-icon icon="material-symbols:data-usage"></iconify-icon>
+                <LocalIcon icon="material-symbols:data-usage"></LocalIcon>
                 {{ formatFileSize(result.size) }}
               </div>
               <div class="result-date">
-                <iconify-icon icon="material-symbols:calendar-today"></iconify-icon>
+                <LocalIcon icon="material-symbols:calendar-today"></LocalIcon>
                 {{ formatDate(result.date) }}
               </div>
             </div>
@@ -696,7 +696,7 @@
             <!-- File Info -->
             <div v-if="result.files" class="file-info">
               <div class="file-count">
-                <iconify-icon icon="material-symbols:folder"></iconify-icon>
+                <LocalIcon icon="material-symbols:folder"></LocalIcon>
                 {{ result.files.length }} files
               </div>
               <div class="file-types">
@@ -710,11 +710,11 @@
           <div class="result-footer">
             <a :href="result.url" target="_blank" class="result-link">
               View Source
-              <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+              <LocalIcon icon="material-symbols:open-in-new"></LocalIcon>
             </a>
             <div class="result-actions-mini">
               <button class="btn-text" @click="toggleFavorite(result)">
-                <iconify-icon :icon="result.favorite ? 'material-symbols:favorite' : 'material-symbols:favorite-outline'"></iconify-icon>
+                <LocalIcon :icon="result.favorite ? 'material-symbols:favorite' : 'material-symbols:favorite-outline'"></LocalIcon>
                 {{ result.favorite ? 'Favorited' : 'Favorite' }}
               </button>
             </div>
@@ -725,7 +725,7 @@
       <!-- Load More -->
       <div v-if="hasMoreResults" class="load-more">
         <button class="btn btn-outline" @click="loadMoreResults" :disabled="isScraping">
-          <iconify-icon icon="material-symbols:add"></iconify-icon>
+          <LocalIcon icon="material-symbols:add"></LocalIcon>
           Load More Results
         </button>
       </div>
@@ -774,7 +774,7 @@
         <div class="modal-header">
           <h3>{{ selectedResult.title }}</h3>
           <button class="btn-icon" @click="selectedResult = null">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -784,7 +784,7 @@
               <div class="detail-item">
                 <strong>Platform:</strong> 
                 <span class="platform-badge" :class="selectedResult.platform">
-                  <iconify-icon :icon="getPlatformIcon(selectedResult.platform)"></iconify-icon>
+                  <LocalIcon icon="getPlatformIcon(selectedResult.platform)"></LocalIcon>
                   {{ formatPlatform(selectedResult.platform) }}
                 </span>
               </div>
@@ -820,11 +820,11 @@
               <h4>Code Preview</h4>
               <div class="code-actions">
                 <button class="btn btn-sm btn-outline" @click="copyCode(selectedResult)">
-                  <iconify-icon icon="material-symbols:content-copy"></iconify-icon>
+                  <LocalIcon icon="material-symbols:content-copy"></LocalIcon>
                   Copy Code
                 </button>
                 <button class="btn btn-sm btn-outline" @click="downloadCode(selectedResult)">
-                  <iconify-icon icon="material-symbols:download"></iconify-icon>
+                  <LocalIcon icon="material-symbols:download"></LocalIcon>
                   Download
                 </button>
               </div>
@@ -836,7 +836,7 @@
             <h4>Files ({{ selectedResult.files.length }})</h4>
             <div class="files-grid">
               <div v-for="file in selectedResult.files" :key="file.name" class="file-item">
-                <iconify-icon :icon="getFileIcon(file.name)"></iconify-icon>
+                <LocalIcon icon="getFileIcon(file.name)"></LocalIcon>
                 <span class="file-name">{{ file.name }}</span>
                 <span class="file-size">{{ formatFileSize(file.size) }}</span>
               </div>
@@ -852,7 +852,7 @@
         <div class="modal-header">
           <h3>Export Results</h3>
           <button class="btn-icon" @click="showExportModal = false">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -896,7 +896,7 @@
           </div>
 
           <button class="btn btn-primary" @click="performExport">
-            <iconify-icon icon="material-symbols:download"></iconify-icon>
+            <LocalIcon icon="material-symbols:download"></LocalIcon>
             Export Results
           </button>
         </div>
@@ -909,16 +909,16 @@
       <div v-if="showMonitoringModal" class="modal-overlay">
         <div class="modal-content xxlarge" @click.stop>
           <div class="modal-header">
-            <h3><iconify-icon icon="material-symbols:monitor-heart"></iconify-icon> System Monitor</h3>
+            <h3><LocalIcon icon="material-symbols:monitor-heart"></LocalIcon> System Monitor</h3>
             <button class="btn-icon" @click="showMonitoringModal = false">
-              <iconify-icon icon="material-symbols:close"></iconify-icon>
+              <LocalIcon icon="material-symbols:close"></LocalIcon>
             </button>
           </div>
           
           <div class="modal-body">
             <!-- Monitoring content will be inserted here -->
             <div class="monitoring-placeholder">
-              <iconify-icon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></iconify-icon>
+              <LocalIcon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></LocalIcon>
               <p>Loading monitoring panel...</p>
             </div>
           </div>
@@ -929,16 +929,16 @@
       <div v-if="showJobManager" class="modal-overlay">
         <div class="modal-content xxlarge" @click.stop>
           <div class="modal-header">
-            <h3><iconify-icon icon="material-symbols:work-history"></iconify-icon> Job Manager</h3>
+            <h3><LocalIcon icon="material-symbols:work-history"></LocalIcon> Job Manager</h3>
             <button class="btn-icon" @click="showJobManager = false">
-              <iconify-icon icon="material-symbols:close"></iconify-icon>
+              <LocalIcon icon="material-symbols:close"></LocalIcon>
             </button>
           </div>
           
           <div class="modal-body">
             <!-- Job manager content will be inserted here -->
             <div class="job-manager-placeholder">
-              <iconify-icon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></iconify-icon>
+              <LocalIcon icon="svg-spinners:bars-rotate-fade" style="font-size: 2rem;"></LocalIcon>
               <p>Loading job manager...</p>
             </div>
           </div>
@@ -3251,7 +3251,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: translateY(-2px);
 }
 
-.status-indicator iconify-icon {
+.status-indicator LocalIcon {
   font-size: 1.5rem;
   color: var(--primary);
   margin-bottom: 0.25rem;
@@ -3308,8 +3308,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-align: center;
 }
 
-.monitoring-placeholder iconify-icon,
-.job-manager-placeholder iconify-icon {
+.monitoring-placeholder LocalIcon,
+.job-manager-placeholder LocalIcon {
   margin-bottom: 1rem;
 }
 

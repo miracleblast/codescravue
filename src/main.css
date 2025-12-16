@@ -3534,3 +3534,72 @@ input:checked + .toggle-slider:before {
 /* Text colors */
 .text-success { color: var(--success) !important; }
 .text-danger { color: var(--error) !important; }
+
+/* Add this ONE rule to fix ALL icons */
+.local-icon {
+  filter: invert(33%) sepia(91%) saturate(1352%) hue-rotate(202deg) brightness(92%) contrast(101%) !important;
+}
+
+/* Navigation icons get white filter */
+.sidebar .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* VS Code icons - remove filter to keep original colors */
+.local-icon[src*="vscode-icons"],
+.local-icon[src*="logos-"],
+.local-icon[src*="devicon"] {
+  filter: none !important;
+}
+
+/* ======================= */
+/* WHITE ICON RULES        */
+/* ======================= */
+
+/* 1. All buttons with blue background get white icons */
+.btn-primary .local-icon,
+.btn-blue .local-icon,
+.button[class*="primary"] .local-icon,
+.el-button--primary .local-icon,
+.ant-btn-primary .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* 2. Success buttons (green background) */
+.btn-success .local-icon,
+.button[class*="success"] .local-icon,
+.el-button--success .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* 3. Danger/error buttons (red background) */
+.btn-danger .local-icon,
+.btn-error .local-icon,
+.button[class*="danger"] .local-icon,
+.el-button--danger .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* 4. Floating action buttons */
+.fab .local-icon,
+.btn-fab .local-icon,
+.button--fab .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* 5. Cards/containers with dark backgrounds */
+.card-dark .local-icon,
+.bg-blue .local-icon,
+.bg-primary .local-icon,
+.bg-dark .local-icon {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* 6. Specific button classes you might be using */
+.submit-button .local-icon,
+.confirm-button .local-icon,
+.save-button .local-icon,
+.download-button .local-icon,
+.upload-button .local-icon {
+  filter: brightness(0) invert(1) !important;
+}

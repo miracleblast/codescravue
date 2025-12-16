@@ -11,7 +11,7 @@ export default defineConfig({
       }
     }
   })],
-  base: './',
+  base: '',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -36,10 +36,6 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
-    https: {
-      key: fs.readFileSync('./ssl/key.pem'),
-      cert: fs.readFileSync('./ssl/cert.pem')
-    },
     hmr: {
       protocol: 'wss',
       host: 'localhost',

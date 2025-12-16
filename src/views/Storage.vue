@@ -3,7 +3,7 @@
     <!-- Storage Overview -->
     <div class="storage-overview">
       <div class="overview-header">
-        <h1><iconify-icon icon="material-symbols:storage"></iconify-icon> Storage Management</h1>
+        <h1><LocalIcon icon="material-symbols:storage"></LocalIcon> Storage Management</h1>
         <p>Storage detection across Windows, macOS, and Linux</p>
       </div>
       
@@ -11,7 +11,7 @@
       <div class="real-stats-grid">
         <div class="stat-card" v-for="stat in realStats" :key="stat.id" :class="stat.class">
           <div class="stat-icon">
-            <iconify-icon :icon="stat.icon"></iconify-icon>
+            <LocalIcon :icon="stat.icon"></LocalIcon>
           </div>
           <div class="stat-content">
             <h3>{{ stat.value }}</h3>
@@ -25,18 +25,18 @@
     <!-- Storage Locations Management -->
     <div class="storage-management">
       <div class="management-header">
-        <h2><iconify-icon icon="mdi:folder-multiple"></iconify-icon> Storage Locations</h2>
+        <h2><LocalIcon icon="mdi:folder-multiple"></LocalIcon> Storage Locations</h2>
         <div class="header-actions">
           <button class="btn btn-secondary" @click="refreshStorage">
-            <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+            <LocalIcon icon="material-symbols:refresh"></LocalIcon>
             Refresh Detection
           </button>
           <button class="btn btn-primary" @click="openAddLocationModal">
-            <iconify-icon icon="material-symbols:add"></iconify-icon>
+            <LocalIcon icon="material-symbols:add"></LocalIcon>
             Add Custom Location
           </button>
           <button class="btn btn-success" @click="openCloudSyncModal">
-            <iconify-icon icon="material-symbols:cloud-sync"></iconify-icon>
+            <LocalIcon icon="material-symbols:cloud-sync"></LocalIcon>
             Cloud Sync
           </button>
         </div>
@@ -79,7 +79,7 @@
           <!-- Location Header -->
           <div class="location-header">
             <div class="location-icon" :class="getLocationIconClass(location)">
-              <iconify-icon :icon="getLocationIcon(location)"></iconify-icon>
+              <LocalIcon icon="getLocationIcon(location)"></LocalIcon>
             </div>
             <div class="location-info">
               <div class="location-title">
@@ -96,17 +96,17 @@
                 </span>
               </div>
               <p class="location-path">
-                <iconify-icon icon="mdi:folder"></iconify-icon>
+                <LocalIcon icon="mdi:folder"></LocalIcon>
                 {{ location.path }}
               </p>
             </div>
             <div class="location-status">
               <div v-if="location.accessible !== false" class="status-indicator status-active">
-                <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                <LocalIcon icon="mdi:check-circle"></LocalIcon>
                 Accessible
               </div>
               <div v-else class="status-indicator status-error">
-                <iconify-icon icon="mdi:alert-circle"></iconify-icon>
+                <LocalIcon icon="mdi:alert-circle"></LocalIcon>
                 Inaccessible
               </div>
             </div>
@@ -145,23 +145,23 @@
             <button class="btn-action" @click="scanLocation(location)" 
                     :disabled="scanningLocations.has(location.path)" 
                     title="Scan Location">
-              <iconify-icon icon="material-symbols:search"></iconify-icon>
+              <LocalIcon icon="material-symbols:search"></LocalIcon>
               Scan
             </button>
             <button class="btn-action" @click="openInExplorer(location.path)" 
                     :disabled="location.accessible === false"
                     title="Open in File Explorer">
-              <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
+              <LocalIcon icon="material-symbols:folder-open"></LocalIcon>
               Open
             </button>
             <button v-if="location.custom" class="btn-action btn-danger" 
                     @click="removeLocation(location)" title="Remove Location">
-              <iconify-icon icon="material-symbols:delete"></iconify-icon>
+              <LocalIcon icon="material-symbols:delete"></LocalIcon>
               Remove
             </button>
             <button v-if="location.cloudProvider" class="btn-action btn-cloud" 
                     @click="configureCloudSync(location)" title="Configure Cloud Sync">
-              <iconify-icon icon="material-symbols:cloud"></iconify-icon>
+              <LocalIcon icon="material-symbols:cloud"></LocalIcon>
               Sync
             </button>
           </div>
@@ -169,7 +169,7 @@
           <!-- Scanning Progress -->
           <div v-if="scanningLocations.has(location.path)" class="scan-progress">
             <div class="progress-header">
-              <iconify-icon icon="material-symbols:search"></iconify-icon>
+              <LocalIcon icon="material-symbols:search"></LocalIcon>
               Scanning...
             </div>
             <div class="progress-bar">
@@ -185,11 +185,11 @@
 
       <!-- Empty State -->
       <div v-if="filteredLocations.length === 0" class="empty-state">
-        <iconify-icon icon="mdi:folder-off" class="empty-icon"></iconify-icon>
+        <LocalIcon icon="mdi:folder-off" class="empty-icon"></LocalIcon>
         <h3>No storage locations found</h3>
         <p>Click "Add Custom Location" to add a storage directory</p>
         <button class="btn btn-primary" @click="refreshStorage">
-          <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+          <LocalIcon icon="material-symbols:refresh"></LocalIcon>
           Try Detection Again
         </button>
       </div>
@@ -201,13 +201,13 @@
         <div class="modal-header">
           <h3>Add Custom Storage Location</h3>
           <button class="btn-close" @click="closeAddModal">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
             <label for="locationName">
-              <iconify-icon icon="mdi:tag"></iconify-icon>
+              <LocalIcon icon="mdi:tag"></LocalIcon>
               Location Name
             </label>
             <input type="text" id="locationName" v-model="newLocation.name" 
@@ -215,21 +215,21 @@
           </div>
           <div class="form-group">
             <label for="locationPath">
-              <iconify-icon icon="mdi:folder"></iconify-icon>
+              <LocalIcon icon="mdi:folder"></LocalIcon>
               Folder Path
             </label>
             <div class="path-input-group">
               <input type="text" id="locationPath" v-model="newLocation.path" 
                      :placeholder="getPathPlaceholder()" class="form-control">
               <button class="btn btn-outline" @click="browseFolder">
-                <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
+                <LocalIcon icon="material-symbols:folder-open"></LocalIcon>
                 Browse
               </button>
             </div>
           </div>
           <div class="form-group">
             <label for="storageLimit">
-              <iconify-icon icon="mdi:harddisk"></iconify-icon>
+              <LocalIcon icon="mdi:harddisk"></LocalIcon>
               Storage Limit (Optional)
             </label>
             <div class="limit-input-group">
@@ -247,7 +247,7 @@
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" v-model="newLocation.autoBackup">
-              <iconify-icon icon="mdi:backup-restore"></iconify-icon>
+              <LocalIcon icon="mdi:backup-restore"></LocalIcon>
               Enable automatic backups
             </label>
           </div>
@@ -256,7 +256,7 @@
           <button class="btn btn-secondary" @click="closeAddModal">Cancel</button>
           <button class="btn btn-primary" @click="addCustomLocation" 
                   :disabled="!isValidLocation">
-            <iconify-icon icon="material-symbols:add"></iconify-icon>
+            <LocalIcon icon="material-symbols:add"></LocalIcon>
             Add Location
           </button>
         </div>
@@ -267,16 +267,16 @@
     <div v-if="showCloudModal" class="modal-overlay" @click.self="showCloudModal = false">
       <div class="modal-content modal-lg">
         <div class="modal-header">
-          <h3><iconify-icon icon="material-symbols:cloud-sync"></iconify-icon> Cloud Sync Configuration</h3>
+          <h3><LocalIcon icon="material-symbols:cloud-sync"></LocalIcon> Cloud Sync Configuration</h3>
           <button class="btn-close" @click="showCloudModal = false">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         <div class="modal-body">
           <div class="cloud-providers">
             <div class="provider-card" @click="configureOneDrive">
               <div class="provider-icon">
-                <iconify-icon icon="simple-icons:microsoftonedrive" style="color: #0078d4;"></iconify-icon>
+                <LocalIcon icon="simple-icons:microsoftonedrive" style="color: #0078d4;"></LocalIcon>
               </div>
               <h4>OneDrive</h4>
               <p>Sync with Microsoft OneDrive</p>
@@ -288,7 +288,7 @@
             </div>
             <div class="provider-card" @click="configureGoogleDrive">
               <div class="provider-icon">
-                <iconify-icon icon="logos:google-drive" style="color: #34a853;"></iconify-icon>
+                <LocalIcon icon="logos:google-drive" style="color: #34a853;"></LocalIcon>
               </div>
               <h4>Google Drive</h4>
               <p>Sync with Google Drive</p>
@@ -461,21 +461,101 @@ export default {
   },
   
   methods: {
-    async loadStorageLocations() {
-      try {
-        if (window.electronAPI) {
-          const result = await window.electronAPI.getStorageLocations();
-          if (result.success) {
-            this.storageLocations = result.locations || [];
-            this.updateStats();
-          } else {
-            console.error('Failed to load storage locations:', result.error);
-          }
+      async loadCloudStatus() {
+    try {
+      if (window.electronAPI && window.electronAPI.getCloudStatus) {
+        const result = await window.electronAPI.getCloudStatus();
+        if (result.success) {
+          this.oneDriveStatus = result.clouds.onedrive;
+          this.googleDriveStatus = result.clouds.googleDrive;
+          
+          // Save to localStorage for quick access
+          localStorage.setItem('onedrive-status', JSON.stringify(this.oneDriveStatus));
+          localStorage.setItem('googledrive-status', JSON.stringify(this.googleDriveStatus));
         }
-      } catch (error) {
-        console.error('Error loading storage locations:', error);
       }
-    },
+    } catch (error) {
+      console.error('Error loading cloud status:', error);
+      // Fallback to localStorage
+      try {
+        this.oneDriveStatus = JSON.parse(localStorage.getItem('onedrive-status')) || { connected: false };
+        this.googleDriveStatus = JSON.parse(localStorage.getItem('googledrive-status')) || { connected: false };
+      } catch (e) {
+        this.oneDriveStatus = { connected: false };
+        this.googleDriveStatus = { connected: false };
+      }
+    }
+  },
+  
+  async saveCloudConfig() {
+    try {
+      if (!window.electronAPI || !window.electronAPI.saveCloudConfig) {
+        // Fallback to localStorage
+        const config = {
+          provider: this.activeCloudConfig,
+          ...this.syncConfig,
+          lastUpdated: new Date().toISOString()
+        };
+        localStorage.setItem(`${this.activeCloudConfig}-config`, JSON.stringify(config));
+        
+        // Update status
+        if (this.activeCloudConfig === 'onedrive') {
+          this.oneDriveStatus = { connected: true };
+          localStorage.setItem('onedrive-status', JSON.stringify(this.oneDriveStatus));
+        } else if (this.activeCloudConfig === 'google-drive') {
+          this.googleDriveStatus = { connected: true };
+          localStorage.setItem('googledrive-status', JSON.stringify(this.googleDriveStatus));
+        }
+        
+        this.showCloudModal = false;
+        return;
+      }
+      
+      const config = {
+        provider: this.activeCloudConfig,
+        ...this.syncConfig,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      const result = await window.electronAPI.saveCloudConfig(config);
+      if (result.success) {
+        // Update status
+        await this.loadCloudStatus();
+        this.showCloudModal = false;
+      }
+    } catch (error) {
+      console.error('Error saving cloud config:', error);
+    }
+  },
+  
+  async openCloudSyncModal() {
+    this.showCloudModal = true;
+    await this.loadCloudStatus();
+  },
+  
+  // loadStorageLocations method to include cloud detection
+  async loadStorageLocations() {
+    try {
+      if (window.electronAPI) {
+        // Load regular storage locations
+        const result = await window.electronAPI.getStorageLocations();
+        if (result.success) {
+          this.storageLocations = result.locations || [];
+          
+          // Load cloud locations separately
+          const cloudResult = await window.electronAPI.detectCloudStorage();
+          if (cloudResult.success && cloudResult.cloudMounts) {
+            // Add cloud locations to the list
+            this.storageLocations.push(...cloudResult.cloudMounts);
+          }
+          
+          this.updateStats();
+        }
+      }
+    } catch (error) {
+      console.error('Error loading storage locations:', error);
+    }
+  },
     
     async refreshStorage() {
       try {
@@ -617,11 +697,27 @@ export default {
     },
     
     getPathPlaceholder() {
-      if (process.platform === 'win32') return 'C:\\Users\\YourName\\Projects';
-      if (process.platform === 'darwin') return '/Users/YourName/Projects';
-      return '/home/yourname/projects';
-    },
+      if (window.electronAPI && window.electronAPI.getPlatform) {
+      try {
+        const platform = window.electronAPI.getPlatform();
+        if (platform === 'win32') return 'C:\\Users\\YourName\\Projects';
+        if (platform === 'darwin') return '/Users/YourName/Projects';
+        return '/home/yourname/projects';
+      } catch (error) {
+        console.warn('Failed to get platform from electronAPI:', error);
+      }
+    }
     
+    // Fallback using user agent detection
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.includes('win')) return 'C:\\Users\\YourName\\Projects';
+    if (userAgent.includes('mac')) return '/Users/YourName/Projects';
+    if (userAgent.includes('linux')) return '/home/yourname/projects';
+    
+    // Default fallback
+    return '/home/yourname/projects';
+  },
+
     async browseFolder() {
       try {
         if (window.electronAPI) {
@@ -640,20 +736,39 @@ export default {
     },
     
     async addCustomLocation() {
-      if (!this.isValidLocation) return;
+  if (!this.isValidLocation) {
+    alert('Please provide a name and path');
+    return;
+  }
+  
+  try {
+    if (window.electronAPI) {
+      console.log('Attempting to add location:', this.newLocation);
       
-      try {
-        if (window.electronAPI) {
-          const result = await window.electronAPI.addStorageLocation(this.newLocation);
-          if (result.success) {
-            this.closeAddModal();
-            await this.loadStorageLocations();
-          }
-        }
-      } catch (error) {
-        console.error('Error adding location:', error);
+      // Create a simple, clean object
+      const locationData = {
+        path: this.newLocation.path.trim(),
+        name: this.newLocation.name.trim() || 'Custom Location',
+        autoBackup: this.newLocation.autoBackup || false,
+        limitGB: this.newLocation.limitGB || null
+      };
+      
+      const result = await window.electronAPI.addStorageLocation(locationData);
+      console.log('Add location result:', result);
+      
+      if (result.success) {
+        this.closeAddModal();
+        await this.loadStorageLocations();
+        alert('Location added successfully!');
+      } else {
+        alert('Failed to add location: ' + (result.error || 'Unknown error'));
       }
-    },
+    }
+  } catch (error) {
+    console.error('Error adding location:', error);
+    alert('Error: ' + error.message);
+  }
+},
     
     async removeLocation(location) {
       if (!location.custom) return;

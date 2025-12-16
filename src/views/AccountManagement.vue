@@ -1,7 +1,7 @@
 <template>
   <div class="tab-content active" id="accounts">
     <div class="tab-header">
-      <h2><iconify-icon icon="material-symbols:person"></iconify-icon> Account Management</h2>
+      <h2><LocalIcon icon="material-symbols:person"></LocalIcon> Account Management</h2>
       <p>Manage platform accounts for authenticated scraping with higher rate limits</p>
     </div>
 
@@ -9,7 +9,7 @@
     <div class="account-stats">
       <div class="stat-card">
         <div class="stat-icon">
-          <iconify-icon icon="material-symbols:person"></iconify-icon>
+          <LocalIcon icon="material-symbols:person"></LocalIcon>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ accounts.length }}</div>
@@ -19,7 +19,7 @@
       
       <div class="stat-card">
         <div class="stat-icon active">
-          <iconify-icon icon="material-symbols:check-circle"></iconify-icon>
+          <LocalIcon icon="material-symbols:check-circle"></LocalIcon>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ activeAccountsCount }}</div>
@@ -29,7 +29,7 @@
       
       <div class="stat-card">
         <div class="stat-icon warning">
-          <iconify-icon icon="material-symbols:warning"></iconify-icon>
+          <LocalIcon icon="material-symbols:warning"></LocalIcon>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ expiredAccountsCount }}</div>
@@ -39,7 +39,7 @@
       
       <div class="stat-card">
         <div class="stat-icon platforms">
-          <iconify-icon icon="material-symbols:public"></iconify-icon>
+          <LocalIcon icon="material-symbols:public"></LocalIcon>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ uniquePlatformsCount }}</div>
@@ -51,23 +51,23 @@
     <!-- Account Actions -->
     <div class="account-actions">
       <button class="btn btn-primary" @click="showAddAccountModal">
-        <iconify-icon icon="material-symbols:add"></iconify-icon>
+        <LocalIcon icon="material-symbols:add"></LocalIcon>
         Add Account
       </button>
       
       <button class="btn btn-outline" @click="bulkTestAccounts" :disabled="accounts.length === 0 || testingAccounts">
-        <iconify-icon v-if="testingAccounts" icon="svg-spinners:bars-rotate-fade"></iconify-icon>
-        <iconify-icon v-else icon="material-symbols:play-arrow"></iconify-icon>
+        <LocalIcon v-if="testingAccounts" icon="svg-spinners:bars-rotate-fade"></LocalIcon>
+        <LocalIcon v-else icon="material-symbols:play-arrow"></LocalIcon>
         {{ testingAccounts ? 'Testing...' : 'Test All Accounts' }}
       </button>
       
       <button class="btn btn-outline" @click="exportAccounts" :disabled="accounts.length === 0">
-        <iconify-icon icon="material-symbols:download"></iconify-icon>
+        <LocalIcon icon="material-symbols:download"></LocalIcon>
         Export Accounts
       </button>
       
       <button class="btn btn-outline" @click="importAccounts">
-        <iconify-icon icon="material-symbols:upload"></iconify-icon>
+        <LocalIcon icon="material-symbols:upload"></LocalIcon>
         Import Accounts
       </button>
       
@@ -77,14 +77,14 @@
           :class="viewMode === 'grid' ? 'btn-primary' : 'btn-outline'"
           @click="viewMode = 'grid'"
         >
-          <iconify-icon icon="material-symbols:grid-view"></iconify-icon>
+          <LocalIcon icon="material-symbols:grid-view"></LocalIcon>
         </button>
         <button 
           class="btn btn-sm" 
           :class="viewMode === 'list' ? 'btn-primary' : 'btn-outline'"
           @click="viewMode = 'list'"
         >
-          <iconify-icon icon="material-symbols:list"></iconify-icon>
+          <LocalIcon icon="material-symbols:list"></LocalIcon>
         </button>
       </div>
     </div>
@@ -114,7 +114,7 @@
       </div>
       
       <div class="search-group">
-        <iconify-icon icon="material-symbols:search"></iconify-icon>
+        <LocalIcon icon="material-symbols:search"></LocalIcon>
         <input 
           type="text" 
           v-model="filters.search" 
@@ -136,7 +136,7 @@
         >
           <div class="account-header">
             <div class="account-platform">
-              <iconify-icon :icon="getPlatformIcon(account.platform)"></iconify-icon>
+              <LocalIcon icon="getPlatformIcon(account.platform)"></LocalIcon>
               <span class="platform-name">{{ formatPlatform(account.platform) }}</span>
             </div>
             <div class="account-status" :class="account.status">
@@ -147,28 +147,28 @@
           
           <div class="account-body">
             <div class="account-username">
-              <iconify-icon icon="material-symbols:person"></iconify-icon>
+              <LocalIcon icon="material-symbols:person"></LocalIcon>
               {{ account.username }}
             </div>
             
             <div v-if="account.email" class="account-email">
-              <iconify-icon icon="material-symbols:email"></iconify-icon>
+              <LocalIcon icon="mdi:email"></LocalIcon>
               {{ account.email }}
             </div>
             
             <div class="account-meta">
               <div class="meta-item" v-if="account.rateLimit">
-                <iconify-icon icon="material-symbols:speed"></iconify-icon>
+                <LocalIcon icon="material-symbols:speed"></LocalIcon>
                 {{ account.rateLimit.remaining }}/{{ account.rateLimit.limit }}
               </div>
               
               <div class="meta-item" v-if="account.lastUsed">
-                <iconify-icon icon="material-symbols:schedule"></iconify-icon>
+                <LocalIcon icon="material-symbols:schedule"></LocalIcon>
                 {{ formatRelativeTime(account.lastUsed) }}
               </div>
               
               <div class="meta-item" v-if="account.createdAt">
-                <iconify-icon icon="material-symbols:calendar-today"></iconify-icon>
+                <LocalIcon icon="material-symbols:calendar-today"></LocalIcon>
                 {{ formatDate(account.createdAt) }}
               </div>
             </div>
@@ -192,7 +192,7 @@
                 :title="`Test ${account.platform} account`"
                 :disabled="testingAccounts"
               >
-                <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               </button>
               
               <button 
@@ -200,7 +200,7 @@
                 @click="editAccount(account)"
                 title="Edit account"
               >
-                <iconify-icon icon="material-symbols:edit"></iconify-icon>
+                <LocalIcon icon="material-symbols:edit"></LocalIcon>
               </button>
               
               <button 
@@ -208,7 +208,7 @@
                 @click="deleteAccount(account)"
                 title="Delete account"
               >
-                <iconify-icon icon="material-symbols:delete"></iconify-icon>
+                <LocalIcon icon="material-symbols:delete"></LocalIcon>
               </button>
               
               <button 
@@ -216,7 +216,7 @@
                 @click="toggleAccountStatus(account)"
                 :title="account.status === 'active' ? 'Deactivate' : 'Activate'"
               >
-                <iconify-icon :icon="account.status === 'active' ? 'material-symbols:pause' : 'material-symbols:play-arrow'"></iconify-icon>
+                <LocalIcon :icon="account.status === 'active' ? 'material-symbols:pause' : 'material-symbols:play-arrow'"></LocalIcon>
               </button>
             </div>
           </div>
@@ -241,7 +241,7 @@
           :class="getAccountStatusClass(account)"
         >
           <div class="list-column platform">
-            <iconify-icon :icon="getPlatformIcon(account.platform)"></iconify-icon>
+            <LocalIcon icon="getPlatformIcon(account.platform)"></LocalIcon>
             {{ formatPlatform(account.platform) }}
           </div>
           
@@ -282,7 +282,7 @@
                 :disabled="testingAccounts"
                 title="Test account"
               >
-                <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               </button>
               
               <button 
@@ -290,7 +290,7 @@
                 @click="editAccount(account)"
                 title="Edit account"
               >
-                <iconify-icon icon="material-symbols:edit"></iconify-icon>
+                <LocalIcon icon="material-symbols:edit"></LocalIcon>
               </button>
               
               <button 
@@ -298,7 +298,7 @@
                 @click="deleteAccount(account)"
                 title="Delete account"
               >
-                <iconify-icon icon="material-symbols:delete"></iconify-icon>
+                <LocalIcon icon="material-symbols:delete"></LocalIcon>
               </button>
             </div>
           </div>
@@ -309,7 +309,7 @@
     <!-- Empty State -->
     <div v-else class="empty-state">
       <div class="empty-icon">
-        <iconify-icon icon="material-symbols:person-off"></iconify-icon>
+        <LocalIcon icon="material-symbols:person-off"></LocalIcon>
       </div>
       <h3>No Accounts Found</h3>
       <p v-if="hasActiveFilters">
@@ -319,7 +319,7 @@
         You haven't added any accounts yet. Add your first account to get started with authenticated scraping.
       </p>
       <button class="btn btn-primary" @click="showAddAccountModal">
-        <iconify-icon icon="material-symbols:add"></iconify-icon>
+        <LocalIcon icon="material-symbols:add"></LocalIcon>
         Add Your First Account
       </button>
     </div>
@@ -330,7 +330,7 @@
         <div class="modal-header">
           <h3>{{ editingAccount ? 'Edit Account' : 'Add New Account' }}</h3>
           <button class="btn-icon" @click="closeAccountModal">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -378,7 +378,7 @@
                   class="btn-icon" 
                   @click="showPassword = !showPassword"
                 >
-                  <iconify-icon :icon="showPassword ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></iconify-icon>
+                  <LocalIcon :icon="showPassword ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></LocalIcon>
                 </button>
               </div>
             </div>
@@ -397,7 +397,7 @@
                   class="btn-icon" 
                   @click="showApiKey = !showApiKey"
                 >
-                  <iconify-icon :icon="showApiKey ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></iconify-icon>
+                  <LocalIcon :icon="showApiKey ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></LocalIcon>
                 </button>
               </div>
               <small class="help-text">
@@ -427,7 +427,7 @@
                       class="tag-remove"
                       @click="removeTag(tag)"
                     >
-                      <iconify-icon icon="material-symbols:close"></iconify-icon>
+                      <LocalIcon icon="material-symbols:close"></LocalIcon>
                     </button>
                   </span>
                 </div>
@@ -450,8 +450,8 @@
                 class="btn btn-primary" 
                 :disabled="savingAccount"
               >
-                <iconify-icon v-if="savingAccount" icon="svg-spinners:bars-rotate-fade"></iconify-icon>
-                <iconify-icon v-else icon="material-symbols:save"></iconify-icon>
+                <LocalIcon v-if="savingAccount" icon="svg-spinners:bars-rotate-fade"></LocalIcon>
+                <LocalIcon v-else icon="material-symbols:save"></LocalIcon>
                 {{ savingAccount ? 'Saving...' : (editingAccount ? 'Update Account' : 'Save Account') }}
               </button>
               <button 
@@ -461,7 +461,7 @@
                 @click="testAccountBeforeSave"
                 :disabled="!accountForm.platform || !accountForm.username"
               >
-                <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
                 Test Account
               </button>
             </div>
@@ -476,7 +476,7 @@
         <div class="modal-header">
           <h3>Account Test Results</h3>
           <button class="btn-icon" @click="showTestResults = false">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -488,7 +488,7 @@
             :class="result.success ? 'success' : 'error'"
           >
             <div class="result-header">
-              <iconify-icon :icon="result.success ? 'material-symbols:check-circle' : 'material-symbols:error'"></iconify-icon>
+              <LocalIcon :icon="result.success ? 'material-symbols:check-circle' : 'material-symbols:error'"></LocalIcon>
               <strong>{{ getAccountById(result.accountId)?.username }}</strong>
               <span class="platform">({{ formatPlatform(getAccountById(result.accountId)?.platform) }})</span>
             </div>
@@ -507,7 +507,7 @@
         <div class="modal-header">
           <h3>Import Accounts</h3>
           <button class="btn-icon" @click="showImportModal = false">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -1315,7 +1315,7 @@ export default {
   margin-left: auto;
 }
 
-.search-group iconify-icon {
+.search-group LocalIcon {
   position: absolute;
   left: 0.75rem;
   color: var(--text-secondary);

@@ -1,15 +1,15 @@
 <template>
   <div class="tab-content active" id="download">
     <div class="tab-header">
-      <h2><iconify-icon icon="material-symbols:system-update"></iconify-icon> Update Center</h2>
-      <p>Keep your CodeScraper Pro updated with the latest features and improvements</p>
+      <h2><LocalIcon icon="mdi:update"></LocalIcon> Update Center</h2>
+      <p>Keep your CodeHarvest Studio updated with the latest features and improvements</p>
     </div>
 
     <!-- Update Status Card -->
     <div class="update-status-card" :class="updateStatus.class">
       <div class="status-header">
         <div class="status-icon">
-          <iconify-icon :icon="updateStatus.icon"></iconify-icon>
+          <LocalIcon :icon="updateStatus.icon"></LocalIcon>
         </div>
         <div class="status-content">
           <h3>{{ updateStatus.title }}</h3>
@@ -39,7 +39,7 @@
           :class="action.class"
           @click="action.handler"
         >
-          <iconify-icon :icon="action.icon"></iconify-icon>
+          <LocalIcon :icon="action.icon"></LocalIcon>
           {{ action.label }}
         </button>
       </div>
@@ -67,18 +67,18 @@
 
       <div class="control-actions">
         <button class="btn btn-primary" @click="checkForUpdates" :disabled="checkingUpdate">
-          <iconify-icon v-if="checkingUpdate" icon="svg-spinners:bars-rotate-fade"></iconify-icon>
-          <iconify-icon v-else icon="material-symbols:refresh"></iconify-icon>
+          <LocalIcon v-if="checkingUpdate" icon="svg-spinners:bars-rotate-fade"></LocalIcon>
+          <LocalIcon v-else icon="material-symbols:refresh"></LocalIcon>
           {{ checkingUpdate ? 'Checking...' : 'Check for Updates' }}
         </button>
         
         <button class="btn btn-outline" @click="viewAllReleases">
-          <iconify-icon icon="material-symbols:history"></iconify-icon>
+          <LocalIcon icon="material-symbols:history"></LocalIcon>
           Version History
         </button>
 
         <button class="btn btn-outline" @click="openDownloadsPage">
-          <iconify-icon icon="material-symbols:download"></iconify-icon>
+          <LocalIcon icon="material-symbols:download"></LocalIcon>
           Download Previous Versions
         </button>
       </div>
@@ -103,7 +103,7 @@
             <h5>Changelog:</h5>
             <ul>
               <li v-for="(change, index) in latestRelease.changes" :key="index">
-                <iconify-icon :icon="getChangeTypeIcon(change.type)"></iconify-icon>
+                <LocalIcon icon="getChangeTypeIcon(change.type)"></LocalIcon>
                 <span :class="`change-${change.type}`">{{ change.description }}</span>
               </li>
             </ul>
@@ -111,11 +111,11 @@
 
           <div class="release-actions">
             <button class="btn btn-primary" @click="downloadUpdate(latestRelease)">
-              <iconify-icon icon="material-symbols:download"></iconify-icon>
+              <LocalIcon icon="material-symbols:download"></LocalIcon>
               Download v{{ latestRelease.version }}
             </button>
             <button class="btn btn-outline" @click="viewReleaseNotes(latestRelease)">
-              <iconify-icon icon="material-symbols:description"></iconify-icon>
+              <LocalIcon icon="material-symbols:description"></LocalIcon>
               Release Notes
             </button>
           </div>
@@ -170,26 +170,26 @@
             
             <div class="version-meta">
               <span class="meta-item">
-                <iconify-icon icon="material-symbols:calendar-today"></iconify-icon>
+                <LocalIcon icon="material-symbols:calendar-today"></LocalIcon>
                 {{ formatDate(release.date) }}
               </span>
               <span class="meta-item" v-if="release.downloads">
-                <iconify-icon icon="material-symbols:download"></iconify-icon>
+                <LocalIcon icon="material-symbols:download"></LocalIcon>
                 {{ release.downloads.toLocaleString() }} downloads
               </span>
               <span class="meta-item" v-if="release.size">
-                <iconify-icon icon="material-symbols:data-usage"></iconify-icon>
+                <LocalIcon icon="material-symbols:data-usage"></LocalIcon>
                 {{ release.size }}
               </span>
             </div>
 
             <div class="version-actions">
               <button class="btn btn-sm btn-outline" @click="viewReleaseDetails(release)">
-                <iconify-icon icon="material-symbols:visibility"></iconify-icon>
+                <LocalIcon icon="material-symbols:visibility"></LocalIcon>
                 Details
               </button>
               <button class="btn btn-sm btn-outline" @click="downloadVersion(release)">
-                <iconify-icon icon="material-symbols:download"></iconify-icon>
+                <LocalIcon icon="material-symbols:download"></LocalIcon>
                 Download
               </button>
               <button 
@@ -197,7 +197,7 @@
                 class="btn btn-sm btn-primary"
                 @click="installVersion(release)"
               >
-                <iconify-icon icon="material-symbols:system-update"></iconify-icon>
+                <LocalIcon icon="mdi:update"></LocalIcon>
                 Install
               </button>
             </div>
@@ -212,7 +212,7 @@
       <div class="requirements-grid">
         <div class="requirement-card">
           <div class="req-icon windows">
-            <iconify-icon icon="mdi:microsoft-windows"></iconify-icon>
+            <LocalIcon icon="mdi:microsoft-windows"></LocalIcon>
           </div>
           <h4>Windows</h4>
           <ul>
@@ -225,7 +225,7 @@
         
         <div class="requirement-card">
           <div class="req-icon macos">
-            <iconify-icon icon="mdi:apple"></iconify-icon>
+            <LocalIcon icon="mdi:apple"></LocalIcon>
           </div>
           <h4>macOS</h4>
           <ul>
@@ -238,7 +238,7 @@
         
         <div class="requirement-card">
           <div class="req-icon linux">
-            <iconify-icon icon="mdi:linux"></iconify-icon>
+            <LocalIcon icon="mdi:linux"></LocalIcon>
           </div>
           <h4>Linux</h4>
           <ul>
@@ -256,7 +256,7 @@
       <h3>Need Help?</h3>
       <div class="links-grid">
         <a href="https://harambee.sbs/docs" target="_blank" class="support-card">
-          <iconify-icon icon="material-symbols:menu-book"></iconify-icon>
+          <LocalIcon icon="material-symbols:menu-book"></LocalIcon>
           <div class="support-content">
             <h4>Documentation</h4>
             <p>Complete user guide and tutorials</p>
@@ -264,7 +264,7 @@
         </a>
         
         <a href="https://harambee.sbs/changelog" target="_blank" class="support-card">
-          <iconify-icon icon="material-symbols:history"></iconify-icon>
+          <LocalIcon icon="material-symbols:history"></LocalIcon>
           <div class="support-content">
             <h4>Changelog</h4>
             <p>Full version history and changes</p>
@@ -272,7 +272,7 @@
         </a>
         
         <a href="https://harambee.sbs/support" target="_blank" class="support-card">
-          <iconify-icon icon="material-symbols:help"></iconify-icon>
+          <LocalIcon icon="material-symbols:help"></LocalIcon>
           <div class="support-content">
             <h4>Support</h4>
             <p>Get help and report issues</p>
@@ -280,7 +280,7 @@
         </a>
         
         <a href="https://harambee.sbs/community" target="_blank" class="support-card">
-          <iconify-icon icon="material-symbols:forum"></iconify-icon>
+          <LocalIcon icon="material-symbols:forum"></LocalIcon>
           <div class="support-content">
             <h4>Community</h4>
             <p>Join other CodeScraper users</p>
@@ -295,7 +295,7 @@
         <div class="modal-header">
           <h3>v{{ selectedRelease.version }} - {{ selectedRelease.title }}</h3>
           <button class="btn-icon" @click="selectedRelease = null">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         
@@ -337,7 +337,7 @@
                     :key="change.description"
                     :class="`change-${change.type}`"
                   >
-                    <iconify-icon :icon="getChangeTypeIcon(change.type)"></iconify-icon>
+                    <LocalIcon icon="getChangeTypeIcon(change.type)"></LocalIcon>
                     {{ change.description }}
                   </li>
                 </ul>
@@ -354,7 +354,7 @@
                   target="_blank"
                   class="btn btn-outline download-btn"
                 >
-                  <iconify-icon :icon="getPlatformIcon(download.platform)"></iconify-icon>
+                  <LocalIcon icon="getPlatformIcon(download.platform)"></LocalIcon>
                   Download for {{ download.platform }}
                 </a>
               </div>
@@ -367,10 +367,10 @@
     <!-- Update Notification (Global) -->
     <div v-if="showUpdateNotification" class="update-notification">
       <div class="notification-content">
-        <iconify-icon icon="material-symbols:system-update" class="notification-icon"></iconify-icon>
+        <LocalIcon icon="mdi:update" class="notification-icon"></LocalIcon>
         <div class="notification-text">
           <strong>Update Available!</strong>
-          <span>CodeScraper Pro v{{ latestVersion }} is now available.</span>
+          <span>CodeHarvest Studio v{{ latestVersion }} is now available.</span>
         </div>
         <div class="notification-actions">
           <button class="btn btn-sm btn-primary" @click="downloadUpdate(latestRelease)">
@@ -463,7 +463,7 @@ export default {
         {
           version: '1.0.0',
           title: 'Initial Release',
-          description: 'First stable release of CodeScraper Pro with GitHub and Stack Overflow support.',
+          description: 'First stable release of CodeHarvest Studio with GitHub and Stack Overflow support.',
           type: 'major',
           date: '2023-12-15',
           downloads: 21500,
@@ -520,7 +520,7 @@ export default {
           class: 'up-to-date',
           icon: 'material-symbols:check-circle',
           title: 'You\'re up to date!',
-          message: `CodeScraper Pro ${this.currentVersion} is the latest version.`,
+          message: `CodeHarvest Studio ${this.currentVersion} is the latest version.`,
           details: true
         }
       }
@@ -1215,7 +1215,7 @@ export default {
   color: var(--text-primary);
 }
 
-.support-card iconify-icon {
+.support-card LocalIcon {
   font-size: 2rem;
   color: var(--primary);
   flex-shrink: 0;

@@ -2,14 +2,14 @@
   <div class="monitoring-modal" :style="modalStyle" v-click-outside="closeIfFloating">
     <!-- Drag Handle -->
     <div class="drag-handle" @mousedown="startDrag" v-if="isFloating">
-      <iconify-icon icon="material-symbols:drag-handle"></iconify-icon>
+      <LocalIcon icon="material-symbols:drag-handle"></LocalIcon>
       <span>System Monitor 🇹🇩</span>
       <div class="drag-controls">
         <button class="btn-icon btn-sm" @click="toggleFloating" :title="isFloating ? 'Dock' : 'Float'">
-          <iconify-icon :icon="isFloating ? 'material-symbols:vertical-align-bottom' : 'material-symbols:open-in-new'"></iconify-icon>
+          <LocalIcon :icon="isFloating ? 'material-symbols:vertical-align-bottom' : 'material-symbols:open-in-new'"></LocalIcon>
         </button>
         <button class="btn-icon btn-sm" @click="closeModal" title="Close">
-          <iconify-icon icon="material-symbols:close"></iconify-icon>
+          <LocalIcon icon="material-symbols:close"></LocalIcon>
         </button>
       </div>
     </div>
@@ -18,11 +18,11 @@
     <div class="modal-content">
       <div class="modal-header" v-if="!isFloating">
         <h3>
-          <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+          <LocalIcon icon="material-symbols:monitor-heart"></LocalIcon>
           System Monitor 🇹🇩 Solar Powered
         </h3>
         <button class="btn-icon" @click="closeModal">
-          <iconify-icon icon="material-symbols:close"></iconify-icon>
+          <LocalIcon icon="material-symbols:close"></LocalIcon>
         </button>
       </div>
       
@@ -32,7 +32,7 @@
           <!-- CPU Card -->
           <div class="stat-card">
             <div class="stat-header">
-              <iconify-icon icon="material-symbols:cpu" class="stat-icon"></iconify-icon>
+              <LocalIcon icon="mdi:cpu" class="stat-icon"></LocalIcon>
               <h4>CPU Usage</h4>
               <span class="stat-value">{{ stats.cpu }}%</span>
             </div>
@@ -56,7 +56,7 @@
           <!-- RAM Card -->
           <div class="stat-card">
             <div class="stat-header">
-              <iconify-icon icon="material-symbols:memory" class="stat-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:memory" class="stat-icon"></LocalIcon>
               <h4>RAM Usage</h4>
               <span class="stat-value">{{ stats.memory }}%</span>
             </div>
@@ -85,20 +85,20 @@
           <!-- Jobs Card -->
           <div class="stat-card">
             <div class="stat-header">
-              <iconify-icon icon="material-symbols:work-history" class="stat-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:work-history" class="stat-icon"></LocalIcon>
               <h4>Active Jobs</h4>
               <span class="stat-value">{{ stats.jobs }}</span>
             </div>
             <div class="stat-content">
               <div class="jobs-list" v-if="activeJobs.length > 0">
                 <div v-for="job in activeJobs.slice(0, 3)" :key="job.id" class="job-item">
-                  <iconify-icon :icon="getPlatformIcon(job.platform)"></iconify-icon>
+                  <LocalIcon icon="getPlatformIcon(job.platform)"></LocalIcon>
                   <span class="job-name">{{ truncateText(job.query, 20) }}</span>
                   <span class="job-progress">{{ job.progress || 0 }}%</span>
                 </div>
               </div>
               <div v-else class="no-jobs">
-                <iconify-icon icon="material-symbols:work-outline"></iconify-icon>
+                <LocalIcon icon="material-symbols:work-outline"></LocalIcon>
                 <span>No active jobs</span>
               </div>
             </div>
@@ -107,20 +107,20 @@
           <!-- Network Card -->
           <div class="stat-card">
             <div class="stat-header">
-              <iconify-icon icon="material-symbols:network-wifi" class="stat-icon"></iconify-icon>
+              <LocalIcon icon="material-symbols:network-wifi" class="stat-icon"></LocalIcon>
               <h4>Network</h4>
             </div>
             <div class="stat-content">
               <div class="network-stats">
                 <div class="network-item">
-                  <iconify-icon icon="material-symbols:download"></iconify-icon>
+                  <LocalIcon icon="material-symbols:download"></LocalIcon>
                   <div class="network-info">
                     <span class="network-value">{{ formatBytes(stats.network.download) }}/s</span>
                     <span class="network-label">Download</span>
                   </div>
                 </div>
                 <div class="network-item">
-                  <iconify-icon icon="material-symbols:upload"></iconify-icon>
+                  <LocalIcon icon="material-symbols:upload"></LocalIcon>
                   <div class="network-info">
                     <span class="network-value">{{ formatBytes(stats.network.upload) }}/s</span>
                     <span class="network-label">Upload</span>
@@ -134,22 +134,22 @@
         <!-- Controls -->
         <div class="controls">
           <button class="btn btn-outline" @click="refreshStats">
-            <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+            <LocalIcon icon="material-symbols:refresh"></LocalIcon>
             Refresh
           </button>
           <button class="btn btn-outline" @click="toggleCharts">
-            <iconify-icon :icon="chartsEnabled ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></iconify-icon>
+            <LocalIcon :icon="chartsEnabled ? 'material-symbols:visibility-off' : 'material-symbols:visibility'"></LocalIcon>
             {{ chartsEnabled ? 'Hide Charts' : 'Show Charts' }}
           </button>
           <button class="btn btn-outline" @click="toggleFloating" v-if="!isFloating">
-            <iconify-icon icon="material-symbols:open-in-new"></iconify-icon>
+            <LocalIcon icon="material-symbols:open-in-new"></LocalIcon>
             Float Window
           </button>
         </div>
 
         <!-- Chart.js Warning -->
         <div v-if="chartError" class="chart-warning">
-          <iconify-icon icon="material-symbols:warning"></iconify-icon>
+          <LocalIcon icon="material-symbols:warning"></LocalIcon>
           <span>Charts disabled: {{ chartError }}</span>
           <button class="btn-link" @click="retryCharts">Retry</button>
         </div>
@@ -719,7 +719,7 @@ export default {
   color: var(--text-secondary);
 }
 
-.no-jobs iconify-icon {
+.no-jobs LocalIcon {
   font-size: 2rem;
   opacity: 0.5;
 }
@@ -736,7 +736,7 @@ export default {
   gap: 0.75rem;
 }
 
-.network-item iconify-icon {
+.network-item LocalIcon {
   font-size: 1.5rem;
   color: var(--primary);
 }

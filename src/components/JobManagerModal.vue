@@ -2,7 +2,7 @@
   <div class="job-manager-modal-wrapper" :class="{ 'floating': isFloating }" :style="wrapperStyle">
     <!-- Drag Handle -->
     <div class="drag-handle" @mousedown="startDrag" @dblclick="toggleFloating">
-      <iconify-icon icon="material-symbols:work-history"></iconify-icon>
+      <LocalIcon icon="material-symbols:work-history"></LocalIcon>
       <span>Job Manager 🇹🇩</span>
       <div class="job-summary">
         <span class="summary-item active">{{ stats.activeJobs }} active</span>
@@ -11,13 +11,13 @@
       </div>
       <div class="drag-controls">
         <button class="btn-icon btn-sm" @click="toggleAutoRefresh" :title="autoRefresh ? 'Pause Auto-refresh' : 'Resume Auto-refresh'">
-          <iconify-icon :icon="autoRefresh ? 'material-symbols:pause' : 'material-symbols:play-arrow'"></iconify-icon>
+          <LocalIcon :icon="autoRefresh ? 'material-symbols:pause' : 'material-symbols:play-arrow'"></LocalIcon>
         </button>
         <button class="btn-icon btn-sm" @click="toggleFloating" :title="isFloating ? 'Dock' : 'Float'">
-          <iconify-icon :icon="isFloating ? 'material-symbols:vertical-align-bottom' : 'material-symbols:open-in-new'"></iconify-icon>
+          <LocalIcon :icon="isFloating ? 'material-symbols:vertical-align-bottom' : 'material-symbols:open-in-new'"></LocalIcon>
         </button>
         <button class="btn-icon btn-sm" @click="closeModal" title="Close">
-          <iconify-icon icon="material-symbols:close"></iconify-icon>
+          <LocalIcon icon="material-symbols:close"></LocalIcon>
         </button>
       </div>
     </div>
@@ -33,7 +33,7 @@
           :class="{ 'active': activeTab === tab.id }"
           @click="activeTab = tab.id"
         >
-          <iconify-icon :icon="tab.icon"></iconify-icon>
+          <LocalIcon :icon="tab.icon"></LocalIcon>
           {{ tab.label }}
           <span class="tab-badge" :class="`tab-${tab.id}`">{{ tab.count }}</span>
         </button>
@@ -45,11 +45,11 @@
           <h4>Active Scraping Jobs ({{ activeJobs.length }})</h4>
           <div class="header-actions">
             <button class="btn btn-sm btn-outline" @click="pauseAllJobs">
-              <iconify-icon icon="material-symbols:pause"></iconify-icon>
+              <LocalIcon icon="material-symbols:pause"></LocalIcon>
               Pause All
             </button>
             <button class="btn btn-sm btn-outline btn-danger" @click="stopAllJobs" :disabled="activeJobs.length === 0">
-              <iconify-icon icon="material-symbols:stop"></iconify-icon>
+              <LocalIcon icon="material-symbols:stop"></LocalIcon>
               Stop All
             </button>
           </div>
@@ -64,7 +64,7 @@
           >
             <div class="job-card-header">
               <div class="job-platform">
-                <iconify-icon :icon="getPlatformIcon(job.platform)" class="platform-icon"></iconify-icon>
+                <LocalIcon icon="getPlatformIcon(job.platform)" class="platform-icon"></LocalIcon>
                 <span class="platform-name">{{ formatPlatform(job.platform) }}</span>
                 <span class="job-priority" :class="`priority-${job.priority}`">
                   P{{ job.priority }}
@@ -72,10 +72,10 @@
               </div>
               <div class="job-actions">
                 <button class="btn-icon btn-sm" @click="pauseJob(job.id)" title="Pause">
-                  <iconify-icon icon="material-symbols:pause"></iconify-icon>
+                  <LocalIcon icon="material-symbols:pause"></LocalIcon>
                 </button>
                 <button class="btn-icon btn-sm btn-danger" @click="stopJob(job.id)" title="Stop">
-                  <iconify-icon icon="material-symbols:stop"></iconify-icon>
+                  <LocalIcon icon="material-symbols:stop"></LocalIcon>
                 </button>
               </div>
             </div>
@@ -97,15 +97,15 @@
               
               <div class="job-stats">
                 <div class="stat-item">
-                  <iconify-icon icon="material-symbols:speed"></iconify-icon>
+                  <LocalIcon icon="material-symbols:speed"></LocalIcon>
                   <span>{{ job.speed || 0 }}/min</span>
                 </div>
                 <div class="stat-item">
-                  <iconify-icon icon="material-symbols:timer"></iconify-icon>
+                  <LocalIcon icon="material-symbols:timer"></LocalIcon>
                   <span>{{ formatDuration(job.duration) }}</span>
                 </div>
                 <div class="stat-item">
-                  <iconify-icon icon="material-symbols:check-circle"></iconify-icon>
+                  <LocalIcon icon="material-symbols:check-circle"></LocalIcon>
                   <span>{{ job.successRate || 0 }}%</span>
                 </div>
               </div>
@@ -114,11 +114,11 @@
             <div class="job-card-footer">
               <div class="job-resources">
                 <div class="resource-item">
-                  <iconify-icon icon="material-symbols:cpu"></iconify-icon>
+                  <LocalIcon icon="mdi:cpu"></LocalIcon>
                   <span>{{ job.cpuUsage || 0 }}%</span>
                 </div>
                 <div class="resource-item">
-                  <iconify-icon icon="material-symbols:memory"></iconify-icon>
+                  <LocalIcon icon="material-symbols:memory"></LocalIcon>
                   <span>{{ formatBytes(job.memoryUsage || 0) }}</span>
                 </div>
               </div>
@@ -129,7 +129,7 @@
           </div>
           
           <div v-if="activeJobs.length === 0" class="no-jobs">
-            <iconify-icon icon="material-symbols:work-outline" class="empty-icon"></iconify-icon>
+            <LocalIcon icon="material-symbols:work-outline" class="empty-icon"></LocalIcon>
             <h5>No active jobs</h5>
             <p>Start a scraping job to see it here</p>
           </div>
@@ -142,11 +142,11 @@
           <h4>Queued Jobs ({{ queuedJobs.length }})</h4>
           <div class="header-actions">
             <button class="btn btn-sm btn-primary" @click="startAllQueued" :disabled="queuedJobs.length === 0">
-              <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+              <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
               Start All
             </button>
             <button class="btn btn-sm btn-outline btn-danger" @click="clearQueue" :disabled="queuedJobs.length === 0">
-              <iconify-icon icon="material-symbols:delete"></iconify-icon>
+              <LocalIcon icon="material-symbols:delete"></LocalIcon>
               Clear Queue
             </button>
           </div>
@@ -172,11 +172,11 @@
             <template #item="{ element: job, index }">
               <div class="queue-item" :class="`priority-${job.priority}`">
                 <div class="queue-position">
-                  <iconify-icon icon="material-symbols:drag-handle" class="drag-handle-item"></iconify-icon>
+                  <LocalIcon icon="material-symbols:drag-handle" class="drag-handle-item"></LocalIcon>
                   <span>#{{ index + 1 }}</span>
                 </div>
                 <div class="queue-platform">
-                  <iconify-icon :icon="getPlatformIcon(job.platform)"></iconify-icon>
+                  <LocalIcon icon="getPlatformIcon(job.platform)"></LocalIcon>
                   {{ formatPlatform(job.platform) }}
                 </div>
                 <div class="queue-query" :title="job.query">
@@ -196,16 +196,16 @@
                 </div>
                 <div class="queue-actions">
                   <button class="btn-icon btn-sm" @click="startQueuedJob(job.id)" title="Start Now">
-                    <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                    <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
                   </button>
                   <button class="btn-icon btn-sm" @click="moveUpQueue(job.id)" title="Move Up" :disabled="index === 0">
-                    <iconify-icon icon="material-symbols:arrow-upward"></iconify-icon>
+                    <LocalIcon icon="material-symbols:arrow-upward"></LocalIcon>
                   </button>
                   <button class="btn-icon btn-sm" @click="moveDownQueue(job.id)" title="Move Down" :disabled="index === queuedJobs.length - 1">
-                    <iconify-icon icon="material-symbols:arrow-downward"></iconify-icon>
+                    <LocalIcon icon="material-symbols:arrow-downward"></LocalIcon>
                   </button>
                   <button class="btn-icon btn-sm btn-danger" @click="removeQueuedJob(job.id)" title="Remove">
-                    <iconify-icon icon="material-symbols:delete"></iconify-icon>
+                    <LocalIcon icon="material-symbols:delete"></LocalIcon>
                   </button>
                 </div>
               </div>
@@ -213,7 +213,7 @@
           </draggable>
           
           <div v-if="queuedJobs.length === 0" class="no-queue">
-            <iconify-icon icon="material-symbols:queue" class="empty-icon"></iconify-icon>
+            <LocalIcon icon="mdi:queue" class="empty-icon"></LocalIcon>
             <p>Queue is empty</p>
           </div>
         </div>
@@ -256,16 +256,16 @@
               <tr>
                 <th @click="sortHistory('date')" class="sortable">
                   Date
-                  <iconify-icon :icon="getSortIcon('date')"></iconify-icon>
+                  <LocalIcon icon="getSortIcon('date')"></LocalIcon>
                 </th>
                 <th @click="sortHistory('platform')" class="sortable">
                   Platform
-                  <iconify-icon :icon="getSortIcon('platform')"></iconify-icon>
+                  <LocalIcon icon="getSortIcon('platform')"></LocalIcon>
                 </th>
                 <th>Query</th>
                 <th @click="sortHistory('results')" class="sortable">
                   Results
-                  <iconify-icon :icon="getSortIcon('results')"></iconify-icon>
+                  <LocalIcon icon="getSortIcon('results')"></LocalIcon>
                 </th>
                 <th>Duration</th>
                 <th>Status</th>
@@ -277,7 +277,7 @@
                 <td>{{ formatDate(job.date) }}</td>
                 <td>
                   <span class="platform-badge" :class="job.platform">
-                    <iconify-icon :icon="getPlatformIcon(job.platform)"></iconify-icon>
+                    <LocalIcon icon="getPlatformIcon(job.platform)"></LocalIcon>
                     {{ formatPlatform(job.platform) }}
                   </span>
                 </td>
@@ -294,13 +294,13 @@
                 <td>
                   <div class="history-actions">
                     <button class="btn-icon btn-sm" @click="viewJobDetails(job)" title="View Details">
-                      <iconify-icon icon="material-symbols:visibility"></iconify-icon>
+                      <LocalIcon icon="material-symbols:visibility"></LocalIcon>
                     </button>
                     <button class="btn-icon btn-sm" @click="reRunJob(job)" title="Re-run">
-                      <iconify-icon icon="material-symbols:refresh"></iconify-icon>
+                      <LocalIcon icon="material-symbols:refresh"></LocalIcon>
                     </button>
                     <button class="btn-icon btn-sm" @click="exportJobResults(job)" title="Export Results">
-                      <iconify-icon icon="material-symbols:download"></iconify-icon>
+                      <LocalIcon icon="material-symbols:download"></LocalIcon>
                     </button>
                   </div>
                 </td>
@@ -405,25 +405,25 @@
       @click.stop
     >
       <div class="context-menu-item" @click="pauseJob(contextMenu.job?.id)">
-        <iconify-icon icon="material-symbols:pause"></iconify-icon>
+        <LocalIcon icon="material-symbols:pause"></LocalIcon>
         Pause Job
       </div>
       <div class="context-menu-item" @click="stopJob(contextMenu.job?.id)">
-        <iconify-icon icon="material-symbols:stop"></iconify-icon>
+        <LocalIcon icon="material-symbols:stop"></LocalIcon>
         Stop Job
       </div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" @click="increasePriority(contextMenu.job?.id)">
-        <iconify-icon icon="material-symbols:arrow-upward"></iconify-icon>
+        <LocalIcon icon="material-symbols:arrow-upward"></LocalIcon>
         Increase Priority
       </div>
       <div class="context-menu-item" @click="decreasePriority(contextMenu.job?.id)">
-        <iconify-icon icon="material-symbols:arrow-downward"></iconify-icon>
+        <LocalIcon icon="material-symbols:arrow-downward"></LocalIcon>
         Decrease Priority
       </div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-item" @click="viewJobDetails(contextMenu.job)">
-        <iconify-icon icon="material-symbols:visibility"></iconify-icon>
+        <LocalIcon icon="material-symbols:visibility"></LocalIcon>
         View Details
       </div>
     </div>
@@ -1129,7 +1129,7 @@ export default defineComponent({
   background: var(--bg-secondary);
 }
 
-.drag-handle iconify-icon {
+.drag-handle LocalIcon {
   color: var(--primary);
 }
 
@@ -1393,7 +1393,7 @@ export default defineComponent({
   color: var(--text-secondary);
 }
 
-.stat-item iconify-icon {
+.stat-item LocalIcon {
   color: var(--primary);
 }
 

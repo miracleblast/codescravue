@@ -3,7 +3,7 @@
     <!-- Header Section -->
     <div class="tab-header">
       <h1>Settings</h1>
-      <p>Configure CodeScraper Pro to match your workflow and preferences</p>
+      <p>Configure CodeHarvest Studio to match your workflow and preferences</p>
     </div>
 
     <!-- Settings Navigation & Content -->
@@ -16,22 +16,22 @@
                   class="nav-item" 
                   :class="{ active: activeSection === section.id }"
                   @click="activeSection = section.id">
-            <iconify-icon :icon="section.icon" class="nav-icon"></iconify-icon>
+            <LocalIcon :icon="section.icon" class="nav-icon"></LocalIcon>
             <span class="nav-label">{{ section.name }}</span>
-            <iconify-icon v-if="hasUnsavedChanges(section.id)" 
+            <LocalIcon v-if="hasUnsavedChanges(section.id)" 
                          icon="material-symbols:circle" 
-                         class="unsaved-dot"></iconify-icon>
+                         class="unsaved-dot"></LocalIcon>
           </button>
         </nav>
 
         <!-- Settings Actions -->
         <div class="settings-actions">
           <button class="btn btn-secondary" @click="resetToDefaults" :disabled="applyingDefaults">
-            <iconify-icon icon="material-symbols:restart-alt"></iconify-icon>
+            <LocalIcon icon="material-symbols:restart-alt"></LocalIcon>
             Reset to Defaults
           </button>
           <button class="btn btn-primary" @click="saveAllSettings" :disabled="saving">
-            <iconify-icon :icon="saving ? 'eos-icons:loading' : 'material-symbols:save'"></iconify-icon>
+            <LocalIcon :icon="saving ? 'eos-icons:loading' : 'material-symbols:save'"></LocalIcon>
             {{ saving ? 'Saving...' : 'Save All Changes' }}
           </button>
         </div>
@@ -50,7 +50,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Application Behavior</h3>
-                <iconify-icon icon="material-symbols:settings"></iconify-icon>
+                <LocalIcon icon="material-symbols:settings"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -81,7 +81,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>File Handling</h3>
-                <iconify-icon icon="material-symbols:folder"></iconify-icon>
+                <LocalIcon icon="material-symbols:folder"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -90,7 +90,7 @@
                     <input type="text" id="defaultLocation" v-model="settings.general.defaultLocation" 
                            class="form-input" readonly>
                     <button class="btn btn-outline" @click="browseLocation">
-                      <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
+                      <LocalIcon icon="material-symbols:folder-open"></LocalIcon>
                       Browse
                     </button>
                   </div>
@@ -111,7 +111,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Language & Region</h3>
-                <iconify-icon icon="material-symbols:language"></iconify-icon>
+                <LocalIcon icon="material-symbols:language"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -170,7 +170,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Theme & Colors</h3>
-                <iconify-icon icon="material-symbols:palette"></iconify-icon>
+                <LocalIcon icon="material-symbols:palette"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -212,7 +212,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Layout & Display</h3>
-                <iconify-icon icon="material-symbols:dashboard"></iconify-icon>
+                <LocalIcon icon="material-symbols:dashboard"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -251,7 +251,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Animations & Effects</h3>
-                <iconify-icon icon="material-symbols:animation"></iconify-icon>
+                <LocalIcon icon="material-symbols:animation"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -284,14 +284,14 @@
         <div v-if="activeSection === 'scraping'" class="settings-section">
           <div class="section-header">
             <h2>Scraping Configuration</h2>
-            <p>Configure how CodeScraper Pro handles web scraping operations</p>
+            <p>Configure how CodeHarvest Studio handles web scraping operations</p>
           </div>
 
           <div class="settings-grid">
             <div class="setting-card">
               <div class="setting-header">
                 <h3>File Types & Filters</h3>
-                <iconify-icon icon="material-symbols:filter-list"></iconify-icon>
+                <LocalIcon icon="material-symbols:filter-list"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -300,7 +300,7 @@
                     <label v-for="fileType in fileTypes" :key="fileType.ext" class="checkbox-label file-type-label">
                       <input type="checkbox" v-model="settings.scraping.fileTypes" :value="fileType.ext">
                       <span class="checkmark"></span>
-                      <iconify-icon :icon="fileType.icon" class="file-type-icon"></iconify-icon>
+                      <LocalIcon :icon="fileType.icon" class="file-type-icon"></LocalIcon>
                       <span class="file-type-name">{{ fileType.name }}</span>
                       <code class="file-type-ext">.{{ fileType.ext }}</code>
                     </label>
@@ -320,7 +320,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Performance</h3>
-                <iconify-icon icon="material-symbols:speed"></iconify-icon>
+                <LocalIcon icon="material-symbols:speed"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -353,7 +353,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Advanced Scraping</h3>
-                <iconify-icon icon="material-symbols:tune"></iconify-icon>
+                <LocalIcon icon="material-symbols:tune"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -381,7 +381,7 @@
                 <div class="form-group">
                   <label for="userAgent">Custom User Agent</label>
                   <input type="text" id="userAgent" v-model="settings.scraping.userAgent" 
-                         placeholder="Mozilla/5.0 (compatible; CodeScraper Pro/1.0)" class="form-input">
+                         placeholder="Mozilla/5.0 (compatible; CodeHarvest Studio/1.0)" class="form-input">
                 </div>
               </div>
             </div>
@@ -399,7 +399,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Proxy Mode</h3>
-                <iconify-icon icon="material-symbols:security"></iconify-icon>
+                <LocalIcon icon="material-symbols:security"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -464,7 +464,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Proxy Rotation</h3>
-                <iconify-icon icon="material-symbols:autorenew"></iconify-icon>
+                <LocalIcon icon="material-symbols:autorenew"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -498,7 +498,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Proxy Testing</h3>
-                <iconify-icon icon="material-symbols:monitor-heart"></iconify-icon>
+                <LocalIcon icon="material-symbols:monitor-heart"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -522,7 +522,7 @@
                   </div>
                 </div>
                 <button class="btn btn-outline" @click="testProxySettings">
-                  <iconify-icon icon="material-symbols:play-arrow"></iconify-icon>
+                  <LocalIcon icon="material-symbols:play-arrow"></LocalIcon>
                   Test Proxy Configuration
                 </button>
               </div>
@@ -541,7 +541,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Auto Backup</h3>
-                <iconify-icon icon="material-symbols:backup"></iconify-icon>
+                <LocalIcon icon="material-symbols:backup"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -570,7 +570,7 @@
                     <input type="text" id="backupLocation" v-model="settings.backup.location" 
                            class="form-input" readonly>
                     <button class="btn btn-outline" @click="browseBackupLocation">
-                      <iconify-icon icon="material-symbols:folder-open"></iconify-icon>
+                      <LocalIcon icon="material-symbols:folder-open"></LocalIcon>
                       Browse
                     </button>
                   </div>
@@ -581,7 +581,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Backup Content</h3>
-                <iconify-icon icon="material-symbols:content-copy"></iconify-icon>
+                <LocalIcon icon="material-symbols:content-copy"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -629,16 +629,16 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Manual Backup</h3>
-                <iconify-icon icon="material-symbols:settings-backup-restore"></iconify-icon>
+                <LocalIcon icon="material-symbols:settings-backup-restore"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="backup-actions">
                   <button class="btn btn-primary" @click="createBackup">
-                    <iconify-icon icon="material-symbols:backup"></iconify-icon>
+                    <LocalIcon icon="material-symbols:backup"></LocalIcon>
                     Create Backup Now
                   </button>
                   <button class="btn btn-outline" @click="restoreBackup">
-                    <iconify-icon icon="material-symbols:restore"></iconify-icon>
+                    <LocalIcon icon="mdi:backup-restore"></LocalIcon>
                     Restore from Backup
                   </button>
                 </div>
@@ -667,7 +667,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Performance</h3>
-                <iconify-icon icon="material-symbols:timer"></iconify-icon>
+                <LocalIcon icon="material-symbols:timer"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -701,40 +701,40 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Privacy & Security</h3>
-                <iconify-icon icon="material-symbols:lock"></iconify-icon>
+                <LocalIcon icon="material-symbols:lock"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="privacy-features">
                   <div class="privacy-item">
-                    <iconify-icon icon="material-symbols:check-circle" class="privacy-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:check-circle" class="privacy-icon"></LocalIcon>
                     <div class="privacy-info">
                       <strong>No Data Collection</strong>
                       <p>We don't track anything - your usage is completely private</p>
                     </div>
                   </div>
                   <div class="privacy-item">
-                    <iconify-icon icon="material-symbols:check-circle" class="privacy-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:check-circle" class="privacy-icon"></LocalIcon>
                     <div class="privacy-info">
                       <strong>No Analytics</strong>
                       <p>No usage analytics or tracking of any kind</p>
                     </div>
                   </div>
                   <div class="privacy-item">
-                    <iconify-icon icon="material-symbols:check-circle" class="privacy-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:check-circle" class="privacy-icon"></LocalIcon>
                     <div class="privacy-info">
                       <strong>No Crash Reporting</strong>
                       <p>If it breaks, contact us directly - no automatic reports</p>
                     </div>
                   </div>
                   <div class="privacy-item">
-                    <iconify-icon icon="material-symbols:check-circle" class="privacy-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:check-circle" class="privacy-icon"></LocalIcon>
                     <div class="privacy-info">
                       <strong>Local Processing</strong>
                       <p>All scraping happens on YOUR computer</p>
                     </div>
                   </div>
                   <div class="privacy-item">
-                    <iconify-icon icon="material-symbols:check-circle" class="privacy-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:check-circle" class="privacy-icon"></LocalIcon>
                     <div class="privacy-info">
                       <strong>Data Stays Local</strong>
                       <p>All data stays on YOUR machine - we never see it</p>
@@ -747,7 +747,7 @@
             <div class="setting-card">
               <div class="setting-header">
                 <h3>Experimental Features</h3>
-                <iconify-icon icon="material-symbols:science"></iconify-icon>
+                <LocalIcon icon="material-symbols:science"></LocalIcon>
               </div>
               <div class="setting-content">
                 <div class="form-group">
@@ -772,7 +772,7 @@
                   </label>
                 </div>
                 <div class="warning-message">
-                  <iconify-icon icon="material-symbols:warning"></iconify-icon>
+                  <LocalIcon icon="material-symbols:warning"></LocalIcon>
                   <span>Experimental features may be unstable</span>
                 </div>
               </div>
@@ -783,7 +783,7 @@
         <!-- About Section -->
         <div v-if="activeSection === 'about'" class="settings-section">
           <div class="section-header">
-            <h2>About CodeScraper Pro</h2>
+            <h2>About CodeHarvest Studio</h2>
             <p>Application information and humanitarian mission</p>
           </div>
 
@@ -791,7 +791,7 @@
             <!-- Mission Card -->
             <div class="about-card mission-card">
               <div class="mission-header">
-                <iconify-icon icon="material-symbols:volunteer-activism" class="mission-icon"></iconify-icon>
+                <LocalIcon icon="material-symbols:volunteer-activism" class="mission-icon"></LocalIcon>
                 <h3>Our Mission - Solar Energy for Chad</h3>
               </div>
               
@@ -810,7 +810,7 @@
                 <div class="mission-section">
                   <h4>Humanitarian Focus:</h4>
                   <ul class="mission-list">
-                    <li>🌞🇹🇩 100% of profits fund solar panels in our country: Chad</li>
+                    <li>🌞🇹🇩 100% of profits fund solar panels in our country: Tchad</li>
                     <li>🇹🇩🇸🇩 Supporting Sudanese refugee communities</li>
                     <li>💡🛖 Bringing electricity to remote villages</li>
                     <li>🫱🏿‍🫲🏾🫶🏿 Sustainable development, not surveillance</li>
@@ -823,10 +823,10 @@
             <div class="about-card">
               <div class="app-info">
                 <div class="app-icon">
-                  <iconify-icon icon="proicons:code" width="24" height="24"  style="color: #0434ff" class="icon-large"></iconify-icon>
+                  <LocalIcon icon="proicons:code" width="24" height="24"  style="color: #0434ff" class="icon-large"></LocalIcon>
                 </div>
                 <div class="app-details">
-                  <h3>CodeScraper Pro</h3>
+                  <h3>CodeHarvest Studio</h3>
                   <p class="version">Version {{ appInfo.version }}</p>
                   <p class="build">Build {{ appInfo.build }}</p>
                 </div>
@@ -839,11 +839,11 @@
 
               <div class="app-links">
                 <button class="btn btn-primary" @click="checkForUpdates">
-                  <iconify-icon icon="material-symbols:update"></iconify-icon>
+                  <LocalIcon icon="material-symbols:update"></LocalIcon>
                   Check for Updates
                 </button>
                 <button class="btn btn-outline" @click="viewLicense">
-                  <iconify-icon icon="material-symbols:description"></iconify-icon>
+                  <LocalIcon icon="material-symbols:description"></LocalIcon>
                   View License
                 </button>
               </div>
@@ -853,7 +853,7 @@
             <div class="about-card">
               <div class="setting-header">
                 <h3>License System</h3>
-                <iconify-icon icon="material-symbols:key"></iconify-icon>
+                <LocalIcon icon="material-symbols:key"></LocalIcon>
               </div>
               <div class="license-content">
                 <div class="license-section">
@@ -880,7 +880,7 @@
             <div class="about-card">
               <div class="setting-header">
                 <h3>Desktop App Information</h3>
-                <iconify-icon icon="material-symbols:desktop-windows"></iconify-icon>
+                <LocalIcon icon="material-symbols:desktop-windows"></LocalIcon>
               </div>
               <div class="desktop-info">
                 <p>Always check for the last update:</p>
@@ -896,7 +896,7 @@
             <div class="about-card">
               <div class="setting-header">
                 <h3>Contact & Support</h3>
-                <iconify-icon icon="material-symbols:contact-support"></iconify-icon>
+                <LocalIcon icon="material-symbols:contact-support"></LocalIcon>
               </div>
               <div class="contact-content">
                 <p><strong>Need help? Contact us through any of these private methods:</strong></p>
@@ -904,7 +904,7 @@
                 <div class="contact-methods">
                   
                   <div class="contact-method">
-                    <iconify-icon icon="material-symbols:chat" class="contact-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:chat" class="contact-icon"></LocalIcon>
                     <div class="contact-info">
                       <strong>bísì Forum</strong>
                       <p>directly on our website in support page</p>
@@ -912,7 +912,7 @@
                   </div>
                   
                   <div class="contact-method">
-                    <iconify-icon icon="simple-icons:session" class="contact-icon"></iconify-icon>
+                    <LocalIcon icon="simple-icons:session" class="contact-icon"></LocalIcon>
                     <div class="contact-info">
                       <strong>Session Messenger</strong> 
                       <p>Add our session ID:</p>
@@ -920,7 +920,7 @@
                   </div>
                   
                   <div class="contact-method">
-                    <iconify-icon icon="material-symbols:send" class="contact-icon"></iconify-icon>
+                    <LocalIcon icon="material-symbols:send" class="contact-icon"></LocalIcon>
                     <div class="contact-info">
                       <strong>Telegram</strong> 
                       <p>@bisisupport</p>
@@ -929,7 +929,7 @@
                 </div>
 
                 <div class="support-note">
-                  <iconify-icon icon="material-symbols:info"></iconify-icon>
+                  <LocalIcon icon="material-symbols:info"></LocalIcon>
                   <p>We are not a corporation - we're a very small team focused on privacy and humanitarian work. 
                   Choose the contact method that feels most comfortable for you.</p>
                 </div>
@@ -940,7 +940,7 @@
             <div class="about-card">
               <div class="setting-header">
                 <h3>System Information</h3>
-                <iconify-icon icon="material-symbols:computer"></iconify-icon>
+                <LocalIcon icon="material-symbols:computer"></LocalIcon>
               </div>
               <div class="system-info">
                 <div class="info-grid">
@@ -976,10 +976,10 @@
             <div class="about-card">
               <div class="setting-header">
                 <h3>Legal Information</h3>
-                <iconify-icon icon="material-symbols:gavel"></iconify-icon>
+                <LocalIcon icon="material-symbols:gavel"></LocalIcon>
               </div>
               <div class="legal-info">
-                <p>CodeScraper Pro &copy; 2025. All rights reserved by bísì.</p>
+                <p>CodeHarvest Studio &copy; 2025-2026. All rights reserved by bísì.</p>
                 <p>This software is provided as-is without any warranty. Use at your own risk.</p>
                 <p><strong>Privacy Guarantee:</strong> We collect absolutely no data from our users. Your privacy is our priority.</p>
               </div>
@@ -995,7 +995,7 @@
         <div class="modal-header">
           <h3>Unsaved Changes</h3>
           <button class="btn-close" @click="showUnsavedModal = false">
-            <iconify-icon icon="material-symbols:close"></iconify-icon>
+            <LocalIcon icon="material-symbols:close"></LocalIcon>
           </button>
         </div>
         <div class="modal-body">
@@ -1127,16 +1127,16 @@ export default {
 
       // File types for scraping settings
       fileTypes: [
-        { ext: 'js', name: 'JavaScript', icon: 'material-symbols:javascript' },
-        { ext: 'html', name: 'HTML', icon: 'material-symbols:html' },
-        { ext: 'css', name: 'CSS', icon: 'material-symbols:css' },
-        { ext: 'py', name: 'Python', icon: 'material-symbols:python' },
-        { ext: 'java', name: 'Java', icon: 'material-symbols:java' },
-        { ext: 'cpp', name: 'C++', icon: 'material-symbols:cpp' },
-        { ext: 'php', name: 'PHP', icon: 'material-symbols:php' },
-        { ext: 'json', name: 'JSON', icon: 'material-symbols:json' },
-        { ext: 'xml', name: 'XML', icon: 'material-symbols:xml' },
-        { ext: 'md', name: 'Markdown', icon: 'material-symbols:markdown' },
+        { ext: 'js', name: 'JavaScript', icon: 'vscode-icons:file-type-javascript' },
+        { ext: 'html', name: 'HTML', icon: 'vscode-icons:file-type-html' },
+        { ext: 'css', name: 'CSS', icon: 'vscode-icons:file-type-css' },
+        { ext: 'py', name: 'Python', icon: 'vscode-icons:file-type-python' },
+        { ext: 'java', name: 'Java', icon: 'vscode-icons:file-type-java' },
+        { ext: 'cpp', name: 'C++', icon: 'vscode-icons:file-type-cpp' },
+        { ext: 'php', name: 'PHP', icon: 'vscode-icons:file-type-php' },
+        { ext: 'json', name: 'JSON', icon: 'vscode-icons:file-type-json' },
+        { ext: 'xml', name: 'XML', icon: 'vscode-icons:file-type-xml' },
+        { ext: 'md', name: 'Markdown', icon: 'vscode-icons:file-type-markdown' },
         { ext: 'txt', name: 'Text', icon: 'material-symbols:description' },
         { ext: 'csv', name: 'CSV', icon: 'material-symbols:table' }
       ],
@@ -1701,7 +1701,7 @@ export default {
   margin: 0;
 }
 
-.setting-header iconify-icon {
+.setting-header LocalIcon {
   color: var(--primary-color);
   font-size: 1.25rem;
 }
@@ -2038,7 +2038,7 @@ export default {
   font-size: 0.9rem;
 }
 
-.warning-message iconify-icon {
+.warning-message LocalIcon {
   font-size: 1.1rem;
 }
 
@@ -2510,7 +2510,7 @@ export default {
   color: var(--text-secondary);
 }
 
-.support-note iconify-icon {
+.support-note LocalIcon {
   color: var(--primary-color);
   font-size: 1.25rem;
   flex-shrink: 0;

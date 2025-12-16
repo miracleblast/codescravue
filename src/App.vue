@@ -4,57 +4,57 @@
     <nav class="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <iconify-icon icon="material-symbols:code" class="logo-icon"></iconify-icon>
-          <h2>CodeScraper Pro by bísì.</h2>
+          <LocalIcon icon="material-symbols:code" class="logo-icon"></LocalIcon>
+          <h2>CodeHarvest Studio by bísì.</h2>
         </div>
       </div>
       
       <ul class="nav-menu">
         <li class="nav-item">
           <router-link to="/" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="majesticons:dashboard-line"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="majesticons:dashboard-line"></LocalIcon>
             <span>Dashboard</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/download" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="material-symbols:download"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="material-symbols:download"></LocalIcon>
             <span>Download App</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/scraper" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="iconamoon:cloud-download-light"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="iconamoon:cloud-download-light"></LocalIcon>
             <span>Code Scraper</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/code" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="material-symbols:code-blocks"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="material-symbols:code-blocks"></LocalIcon>
             <span>Code Editor</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/storage" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="solar:folder-with-files-linear"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="solar:folder-with-files-linear"></LocalIcon>
             <span>Storage</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/proxy" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="material-symbols:security"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="material-symbols:security"></LocalIcon>
             <span>Proxy Management</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/accounts" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="material-symbols:person"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="material-symbols:person"></LocalIcon>
             <span>Account Management</span>
           </router-link>
         </li>
         <li class="nav-item">
           <router-link to="/settings" class="nav-link" active-class="active">
-            <iconify-icon class="nav-icon" icon="material-symbols:settings"></iconify-icon>
+            <LocalIcon class="nav-icon" icon="material-symbols:settings"></LocalIcon>
             <span>Settings</span>
           </router-link>
         </li>
@@ -62,7 +62,7 @@
 
       <div class="sidebar-footer">
         <button class="help-btn" @click="showHelp = true">
-          <iconify-icon icon="material-symbols:help"></iconify-icon>
+          <LocalIcon icon="material-symbols:help"></LocalIcon>
           <span>Help & Guide</span>
         </button>
       </div>
@@ -79,14 +79,14 @@
     <!-- Theme Toggle -->
     <div class="theme-toggle">
       <div class="theme-btn" @click="toggleTheme" id="themeToggle">
-        <iconify-icon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></iconify-icon>
+        <LocalIcon :icon="isDarkTheme ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'"></LocalIcon>
       </div>
     </div>
     
     <!-- Language Toggle -->
     <div class="language-toggle">
       <div class="lang-btn" @click="toggleLanguage" id="languageToggle">
-        <iconify-icon icon="material-symbols:translate"></iconify-icon>
+        <LocalIcon icon="material-symbols:translate"></LocalIcon>
       </div>
     </div>
   </div>
